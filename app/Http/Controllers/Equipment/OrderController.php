@@ -46,20 +46,27 @@ class OrderController extends Controller
         return $this->order->forOrderId($order_id);
     }
 
+    /**
+     * 创建工单
+     * @param Request $request
+     * @return array
+     */
     public function create(Request $request){
-//        $count = DB::table('app_jiaozhuang_order')->where('create_time','>=', Carbon::today())->sharedLock()->count();
-        $count = Order::where('create_time','>=', Carbon::today())->count();
-        $orderNo = date('YmdHis',time()).($count+1);
         $input = $request->all();
+
         $validator = Validator::make($input, [
             'order_desc' => 'required',
             'place' => 'required',
             'channel_id' => 'required',
-            'mobile' => 'required'
+            'mobile' => 'required',
+            'img' => 'required'
         ]);
-//        if ($validator->fails()) {
-//            return array('status' => 0, 'errmsg' => '缺失参数!');
-//        }
+        if ($validator->fails()) {
+            return array('status' => 0, 'errmsg' => '缺失参数!');
+        }
+
+        $count = Order::where('create_time','>=', Carbon::today())->count();
+        $orderNo = date('YmdHis',time()).($count+1);
         $now = Carbon::now();
         $uuid = Uuid::generate(1);
         $input[] = array(
@@ -69,20 +76,41 @@ class OrderController extends Controller
             'create_time'=>$now,
             'creator_id'=>$_SERVER['HTTP_AUTHORIZATION'],
             'user_name'=>Predis::hget('user:'.$_SERVER['HTTP_AUTHORIZATION'],'displayName'),
-//            'org_name'=>Predis::hget('channel:'.$input['channel_id'],'channelName'),
+            'org_name'=>Predis::hget('channel:'.$input['channel_id'],'channelName'),
             'order_flag'=>1,
         );
-//        $img = array();
-//        foreach ($input['img'] as $key => $item) {
-//            $_uuid = Uuid::generate(1);
-//            $img[$key] = $item;
-//            $img[$key]['img_id'] = $_uuid->string;
-//            $img[$key]['order_id'] = $data['order_id'];
-//            $img[$key]['create_time'] = $now;
-//            $img[$key]['user_id'] = $input['user_id'];
-//        }
+        $img = array();
+        foreach ($input['img'] as $key => $item) {
+            $_uuid = Uuid::generate(1);
+            $img[$key] = $item;
+            $img[$key]['img_id'] = $_uuid->string;
+            $img[$key]['order_id'] = $input[0]['order_id'];
+            $img[$key]['create_time'] = $now;
+            $img[$key]['user_id'] = $input['user_id'];
+        }
+        $images=[];
+        foreach($img as $v){
+            $images[] = new OrderImg($v);
+        }
+        $save = Order::create($input[0]);
+        $save->images()->saveMany($images);
+        if($save){
+            return array('status'=>1);
+        }else{
+            return array('status'=>0,'创建工单失败！');
+        }
+    }
 
-        $res = Order::create($input[0]);
-        dd($res);
+    /**
+     * 待处理工单列表
+     * @param $repaire_id
+     * @return mixed
+     */
+    public function pendingOrderList($repaire_id){
+        return $this->order->pendingOrder($repaire_id);
+    }
+
+    public function handingOrderList($repaire_id){
+        return $this->order->handingOrder();
     }
 }

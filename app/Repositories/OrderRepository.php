@@ -9,6 +9,7 @@
 namespace App\Repositories;
 
 use App\Model\Equipment\Order;
+use App\Model\Equipment\ChannelEquipment;
 
 class OrderRepository
 {
@@ -16,18 +17,6 @@ class OrderRepository
     public function __construct()
     {
         $this->page = config('equipment.page');
-    }
-
-    /**
-     * 获取指定用户的所有工单。
-     *
-     * @param  User  $user
-     * @return Collection
-     */
-    public function forUser($user_id)
-    {
-        return Order::where('user_id', $user_id)
-            ->get();
     }
     /**
      * 获取指定指定工单号的工单详情
@@ -42,8 +31,6 @@ class OrderRepository
             ->with('images','schedules','places')
             ->get();
     }
-
-
     /**
      * 报修商的报修工单列表
      * @param $user_id
@@ -63,5 +50,23 @@ class OrderRepository
             ->select($data)
             ->orderBy('repaire_time','desc')
             ->paginate($this->page);
+    }
+
+    public function pendingOrder($repair_id){
+        $data = ['order_id','order_desc','state','repaire_time','channel_equipment_id'];
+        $res = ChannelEquipment::where('repair_id',$repair_id)->with(['orders'=>function($query) use($data){
+            $query->where('state',1)->where('receive_status',0)->select($data)->with('schedules');
+        }])->first()->toArray();
+        return $res['orders'];
+    }
+
+    public function handingOrder($repair_id){
+        $res = ChannelEquipment::where('repair_id',$repair_id)->with(['orders'=>function($query) use($data){
+            $query->where('state',1)->where('receive_status',0)->select($data)->with('schedules');
+        }])->first()->toArray();
+    }
+
+    protected function forUser(){
+
     }
 }

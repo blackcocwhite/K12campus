@@ -111,7 +111,7 @@ class EequipmentController extends Controller
         if(empty($data)){
             return array('status' => 0, 'errmsg' => '没有数据');
         }else{
-            return $data;
+            return  array('status' => 1, 'data' => $data);
         }
     }
 
@@ -126,7 +126,7 @@ class EequipmentController extends Controller
         if(empty($data)){
             return array('status' => 0, 'errmsg' => '没有数据');
         }else{
-            return $data;
+            return array('status' => 1, 'data' => $data);
         }
     }
 
@@ -141,7 +141,7 @@ class EequipmentController extends Controller
         if(empty($data)){
             return array('status' => 0, 'errmsg' => '没有数据');
         }else{
-            return $data;
+            return  array('status' => 1, 'data' => $data);
         }
     }
     /*
@@ -283,9 +283,40 @@ class EequipmentController extends Controller
                 return array('status' => 0, 'errmsg' => '添加点位失败!');
             }else{
                 DB::commit();
-                return array('status' => 1);
+                return array('status' => 1 , 'data'=>array('repaire_place_id'=>$input['repaire_place_id']));
             }
 
+        }
+    }
+
+    public function deletePoint(Request $request){
+        $input = $request->all();
+        $validator = Validator::make($input, [
+            'user_id' => 'required',
+            'order_id' => 'required',
+            'repaire_place_id' => 'required',
+        ]);
+        if ($validator->fails()) {
+            return array('status' => 0, 'errmsg' => '缺失参数!');
+        }
+        if ($order = DB::table('app_jiaozhuang_order')->where('order_id', '=', $input['order_id'])->first()) {
+            if ($order->receive_user_id != $input['user_id']) {
+                return array('status' => 0, 'errmsg' => '接单人不匹配');
+            }
+            DB::beginTransaction();
+            $res = DB::table('app_jiaozhuang_repaire_place')->where('repaire_place_id',$input['repaire_place_id'])->delete();
+            if(DB::table('app_jiaozhuang_repaire_place')->where('order_id',$input['order_id'])->count()<1){
+                DB::table('app_jiaozhuang_order')
+                    ->where('order_id', '=', $input['order_id'])
+                    ->update(['is_point' => 0]);
+            }
+            if (!$res) {
+                DB::rollback();//事务回滚
+                return array('status' => 0, 'errmsg' => '删除点位失败!');
+            }else{
+                DB::commit();
+                return array('status' => 1);
+            }
         }
     }
 
@@ -397,6 +428,7 @@ class EequipmentController extends Controller
             'channel_id'=>$input['channel_id'],
             'place'=>$input['place'],
             'order_flag'=>1,
+            'latitude' => $input['latitude'],
             'receive_status'=>0
         );
         $img = array();
@@ -419,6 +451,7 @@ class EequipmentController extends Controller
             return array('status'=>0,'errmsg'=>'创建工单失败，请重试');
         }
     }
+
     /*报修人员工单列表*/
     public function orderList($user_id){
         $res = DB::table('app_jiaozhuang_order')->where('creator_id',$user_id)->select('order_id','state','order_desc','repaire_time')->get();

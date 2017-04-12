@@ -146,7 +146,7 @@ return [
         App\Providers\RouteServiceProvider::class,
 
         /* dingo */
-        Dingo\Api\Provider\LaravelServiceProvider::class,
+//        Dingo\Api\Provider\LaravelServiceProvider::class,
 
         /*idehelper*/
         Barryvdh\LaravelIdeHelper\IdeHelperServiceProvider::class,
