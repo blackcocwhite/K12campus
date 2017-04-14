@@ -40,6 +40,10 @@ Route::group(['prefix'=>'api','namespace' => 'Equipment','middleware' => 'wechat
     Route::post('/dologin',"UserController@postRegister");
 });
 
+Route::get('/systemRegister/{openid}/{mobile}',"UserController@create");
+Route::get('/checkUser/{openid}',"UserController@login");
+
+
 Route::group(['namespace' => 'Equipment','middleware' => 'equipmentAuth'], function () {
     Route::get('/pendingOrderList/{repaire_id}',"OrderController@pendingOrderList");
 });

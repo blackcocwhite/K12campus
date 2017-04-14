@@ -13,6 +13,7 @@ use Illuminate\Http\Request;
 use App\Model\Equipment\User;
 use DB;
 use Validator;
+use Uuid;
 
 class UserController extends Controller
 {
@@ -39,20 +40,37 @@ class UserController extends Controller
 
         $validator = Validator::make($input, [
             'mobile' => 'required',
-//            'displayName' => 'required'
         ]);
         if ($validator->fails()) {
             return array('status' => 0, 'errmsg' => '缺失参数!');
         }
-        $status = 0;//标识维修商
-        if (!$auth['repaire_id'] = DB::table('app_jiaozhuang_repaire')->where('repaire_phone', $input['mobile'])->value('repaire_id')) {
-            $status = 1;
-
-            if (!$auth['repaire_id'] = DB::table('app_jiaozhuang_supply')->where('supply_mobile',  $input['mobile'])->value('supply_id'))
-                return array('status' => 0);
+        if($auth = $this->check_accendant($input['mobile'])){
+            $this->doRegister();
         }
-        $auth['identity'] = $status;
 
         dd($auth);
+    }
+
+    protected function check_accendant($mobile){
+        $status = 0;//标识维修商
+        if (!$auth['repaire_id'] = DB::table('app_jiaozhuang_repaire')->where('repaire_phone', $mobile)->value('repaire_id')) {
+            $status = 1;
+
+            if (!$auth['repaire_id'] = DB::table('app_jiaozhuang_supply')->where('supply_mobile',  $mobile)->value('supply_id'))
+                return false;
+        }
+        $auth['identity'] = $status;
+        return $auth;
+    }
+
+    protected function doRegister(){
+        $uid = Uuid::generate(1);
+        $data['repaire_id'] = $_check['data']['repaire_id'];
+        $data['repaire_user_id'] = $uid->string;
+        $data['user_id'] = $_SERVER['HTTP_AUTHORIZATION'];
+        $data['parent_id'] = '';
+        $data['flag'] = 0;
+        $data['create_time'] = Carbon::now();
+        $data['identity'] = $_check['data']['identity'];
     }
 }

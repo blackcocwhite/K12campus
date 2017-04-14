@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\Config;
 use Uuid;
 use Validator;
 use Predis;
-use App\Repositories\OrderRepository;
+use App\Repositories\Equipment\OrderRepository;
 use App\Model\Equipment\OrderImg;
 use App\Model\Equipment\Order;
 use Carbon\Carbon;

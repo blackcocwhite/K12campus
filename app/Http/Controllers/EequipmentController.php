@@ -53,6 +53,7 @@ class EequipmentController extends Controller
         if ($_check['status'] === 0) {
             return array('status' => 0);
         } else {
+
             $uid = Uuid::generate(1);
             $data['repaire_id'] = $_check['data']['repaire_id'];
             $data['repaire_user_id'] = $uid->string;
@@ -368,6 +369,8 @@ class EequipmentController extends Controller
 
         return response()->json($data);
     }
+
+
     /*确认完成维修单*/
     public function confirmComplete(Request $request){
     	$input = $request->all();
@@ -384,12 +387,24 @@ class EequipmentController extends Controller
         }
         $money = DB::table('app_jiaozhuang_repaire_project')->where('repaire_id',$input['repaire_id'])->value('money');
         $num = DB::table('app_jiaozhuang_repaire_place')->where('order_id',$input['order_id'])->count();
+        DB::beginTransaction();
     	$res = DB::table('app_jiaozhuang_order')
         ->where('order_id',$input['order_id'])
         ->update(['state'=>3,'create_time'=>Carbon::now(),'total_money'=>$money*$num]);
-    	if($res){
+
+        $uuid = Uuid::generate(1);
+        $insert['schedule_id'] = $uuid->string;
+        $insert['status'] = 2;
+        $insert['place'] = $input['place'] ? : '未找到位置';
+        $insert['create_time'] = Carbon::now();
+        $insert['schedule_name'] = '待评价';
+        $res2 = DB::table('app_jiaozhuang_schedule')->insert($insert);
+
+    	if($res && $res2){
+            DB::commit();
     		return array('status'=>1);
     	}else{
+            DB::rollback();
     		return array('status'=>0,'errmsg'=>'确认失败!');
     	}
     }
@@ -485,6 +500,15 @@ class EequipmentController extends Controller
                 'create_time'=>$now,
                 'finish_time'=>$now
                 ])){
+
+                $uuid = Uuid::generate(1);
+                $insert['schedule_id'] = $uuid->string;
+                $insert['status'] = 2;
+                $insert['place'] = $input['place'] ? : '未找到位置';
+                $insert['create_time'] = Carbon::now();
+                $insert['schedule_name'] = '已完成';
+                DB::table('app_jiaozhuang_schedule')->insert($insert);
+
                 return array('status'=>1);
             }else{
                 return array('status'=>0,'errmsg'=>'评价失败,请重试');

@@ -119,7 +119,7 @@ return [
             'host'     => env('REDIS_HOST', '120.26.68.230'),
             'password' => env('REDIS_PASSWORD', 123),
             'port'     => env('REDIS_PORT', 6379),
-            'database' => 3,
+            'database' => env('REDIS_DATABASE', 3)
         ],
 
     ],
