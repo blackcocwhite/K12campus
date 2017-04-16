@@ -10,4 +10,6 @@ class User extends Model
     protected $primaryKey = 'repaire_user_id';
     public $incrementing = false;
     public $timestamps = false;
+    protected $guarded = ['createAt','updateAt'];
+
 }

@@ -32,17 +32,25 @@ Route::post('/createOrder','EequipmentController@createOrder');
 Route::get('/orderList/{user_id}','EequipmentController@orderList');
 Route::post('/evaluate','EequipmentController@evaluate');
 
+/****系统注册****/
+Route::get('/checkUser/{openid}',"UserController@login");
+Route::get('/systemRegister/{openid}/{mobile}',"UserController@create");
+
+/****教育装备客服系统****/
+Route::post('/doRegister',"Equipment\UserController@postRegister");
 Route::group(['prefix'=>'api','namespace' => 'Equipment','middleware' => 'wechat.user'], function () {
     Route::get('/teacher',"OrderController@repairOrderList");
     Route::get('/order/{order_id}',"OrderController@orderInformation");
     Route::post('/create',"OrderController@create");
     Route::get('/login',"UserController@login");
-    Route::post('/dologin',"UserController@postRegister");
 });
 
-Route::get('/systemRegister/{openid}/{mobile}',"UserController@create");
-Route::get('/checkUser/{openid}',"UserController@login");
 
+
+
+Route::group(['namespace' => 'Equipment'], function () {
+    Route::post('/posttest',"UserController@postRegister");
+});
 
 Route::group(['namespace' => 'Equipment','middleware' => 'equipmentAuth'], function () {
     Route::get('/pendingOrderList/{repaire_id}',"OrderController@pendingOrderList");

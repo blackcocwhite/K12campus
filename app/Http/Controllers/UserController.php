@@ -16,9 +16,8 @@ class UserController extends Controller
     }
 
     /**
-     * Display a listing of the resource.
-     *
-     * @return \Illuminate\Http\Response
+     * @param $openid
+     * @return array
      */
     public function login($openid)
     {
@@ -26,7 +25,9 @@ class UserController extends Controller
     }
 
     /**
-     * @param Request $request
+     * @param $openid
+     * @param $mobile
+     * @return array
      */
     public function create($openid,$mobile)
     {

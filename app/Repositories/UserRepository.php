@@ -42,7 +42,8 @@ class UserRepository
                         ->hset("user:$user_id",$wappId,$openid)
                         ->sadd("sync.user.list",$user_id);
                 });
-                return array('status'=>1,'data'=>array('userId'=>$user_id));
+                $_keys = ["wechat.user:$openid","user:$user_id"];
+                return array('status'=>1,'data'=>array('userId'=>$user_id,'_keys'=>$_keys));
             }
         }else{
             $string = Uuid::generate(1);
@@ -60,8 +61,8 @@ class UserRepository
                    ->hmset("app.user:$mobile",array('userId' => $user_id, 'mobile' => $mobile))
                    ->sadd("sync.user.list",$user_id);
             });
-
-            return array('status'=>1,'data'=>array('userId'=>$user_id));
+            $_keys = ["wechat.user:$openid","user:$user_id","app.user:$mobile"];
+            return array('status'=>1,'data'=>array('userId'=>$user_id,'_keys'=>$_keys));
         }
     }
 
@@ -72,7 +73,13 @@ class UserRepository
      */
     public function getSubscribeUserInfo($openid)
     {
-//        $data = ['subscribe','headimgurl','nickname','sex'];
         return Predis::hgetall("_uid($openid)");
+    }
+
+    public function _modifyUser($openid,$type,$data)
+    {
+        if($user_id = Predis::hget("wechat.user:$openid",'userId')){
+            Predis::hset("user:$user_id",$type,$data);
+        }
     }
 }

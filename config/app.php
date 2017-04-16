@@ -198,9 +198,6 @@ return [
         'Validator' => Illuminate\Support\Facades\Validator::class,
         'View'      => Illuminate\Support\Facades\View::class,
 
-        'Api'       => Dingo\Api\Facade\API::class,
-        'ApiRoute'  => Dingo\Api\Facade\Route::class,
-
         'Uuid' => Webpatser\Uuid\Uuid::class
     ],
 
