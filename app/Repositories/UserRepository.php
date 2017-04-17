@@ -50,9 +50,9 @@ class UserRepository
             $user_id = $string->string;
 
             $userInfo = $this->getSubscribeUserInfo($openid);
-            $sub = isset($userInfo['subscribe']) ? : 0;
-            $avatar = isset($userInfo['headimgurl']) ? : '';
-            $displayName = isset($userInfo['nickname']) ? : '未关注用户';
+            $sub = isset($userInfo['subscribe']) ? $userInfo['subscribe'] : 0;
+            $avatar = isset($userInfo['headimgurl']) ? $userInfo['headimgurl'] : '';
+            $displayName = isset($userInfo['nickname']) ? $userInfo['nickname'] : '未关注用户';
             $sex = isset($userInfo['sex']) == 1 ? 0 : 1;
 
             Predis::pipeline(function ($pipe) use($openid,$mobile,$wappId,$user_id,$sub,$avatar,$displayName,$sex){

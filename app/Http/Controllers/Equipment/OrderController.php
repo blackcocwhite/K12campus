@@ -8,7 +8,6 @@
 
 namespace App\Http\Controllers\Equipment;
 
-//use App\Http\Requests\Equipment\OrderCreateRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Config;
 use Uuid;
@@ -17,6 +16,7 @@ use Predis;
 use App\Repositories\Equipment\OrderRepository;
 use App\Model\Equipment\OrderImg;
 use App\Model\Equipment\Order;
+use App\Model\Equipment\User;
 use Carbon\Carbon;
 use App\Http\Controllers\Controller;
 
@@ -106,11 +106,58 @@ class OrderController extends Controller
      * @param $repaire_id
      * @return mixed
      */
-    public function pendingOrderList($repaire_id){
+    public function pendingOrderList(){
+        $repaire_id = User::where('user_id',$_SERVER['HTTP_AUTHORIZATION'])->value('repaire_id');
         return $this->order->pendingOrder($repaire_id);
     }
 
-    public function handingOrderList($repaire_id){
-        return $this->order->handingOrder();
+    public function handingOrderList(){
+        $repaire_id = User::where('user_id',$_SERVER['HTTP_AUTHORIZATION'])->value('repaire_id');
+        return $this->order->handingOrder($repaire_id);
+    }
+    public function completeOrderList(){
+        $repaire_id = User::where('user_id',$_SERVER['HTTP_AUTHORIZATION'])->value('repaire_id');
+        return $this->order->pendingOrder($repaire_id);
+    }
+    public function evaluatedOrderList(){
+        $repaire_id = User::where('user_id',$_SERVER['HTTP_AUTHORIZATION'])->value('repaire_id');
+        return $this->order->pendingOrder($repaire_id);
+    }
+
+    /**
+     * 接受工单
+     */
+    public function receiveOrder(){
+
+    }
+
+    //确认上门
+    public function confirmVisit(){
+
+    }
+
+    //添加点位
+    public function addPoint(){
+
+    }
+
+    //删除点位
+    public function deletePoint(){
+
+    }
+
+    //添加进度
+    public function addSchedule(){
+
+    }
+
+    //确认完成维修订单
+    public function confirmComplete(){
+
+    }
+
+    //负责人全部工单查看
+    public function allOrders(){
+
     }
 }
