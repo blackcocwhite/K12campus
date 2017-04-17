@@ -126,9 +126,19 @@ class OrderController extends Controller
 
     /**
      * 接受工单
+     * @param $request
      */
-    public function receiveOrder(){
+    public function receiveOrder(Request $request){
+        $input = $request->all();
+        $validator = Validator::make($input, [
+            'order_id' => 'required',
+            'repaire_id' => 'required',
+            'place' => 'required'
+        ]);
 
+        if ($validator->fails()) {
+            return array('status' => 0, 'errmsg' => '缺失参数!');
+        }
     }
 
     //确认上门
