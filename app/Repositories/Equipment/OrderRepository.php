@@ -9,7 +9,8 @@
 namespace App\Repositories\Equipment;
 
 use App\Model\Equipment\Order;
-use App\Model\Equipment\ChannelEquipment;
+use App\Model\Equipment\OrderSchedule;
+use Uuid;
 
 class OrderRepository
 {
@@ -54,49 +55,97 @@ class OrderRepository
 
     public function pendingOrder($repair_id){
         $data = ['order_id','order_desc','state','repaire_time','channel_equipment_id'];
-        $res = ChannelEquipment::where('repair_id',$repair_id)
-            ->with(['orders'=>function($query) use($data){
-                $query->where('state',2)->where('receive_status',0)->select($data)->with('schedules')->paginate($this->page);
-             }])
-            ->first()
-            ->toArray();
-        return $res['orders'];
+        $res = Order::where('repair_id',$repair_id)
+            ->where('state',2)
+            ->where('receive_status',0)
+            ->select($data)
+            ->with(['schedules' => function ($query) {
+                $query->select('schedule_id','order_id','schedule_name','create_time')
+                    ->orderBy('create_time','desc')
+                    ->take(1);
+            }])
+            ->paginate($this->page);
+
+        return $res;
     }
 
     public function handingOrder($repair_id){
         $data = ['order_id','order_desc','state','repaire_time','channel_equipment_id'];
-        $res = ChannelEquipment::where('repair_id',$repair_id)
-            ->with(['orders'=>function($query) use($data){
-                $query->where('state',2)->where('receive_status',1)->where('receive_user_id',$_SERVER['HTTP_AUTHORIZATION'])->select($data)->with('schedules')->paginate($this->page);
+        $res = Order::where('repair_id',$repair_id)
+            ->where('state',2)
+            ->where('receive_status',1)
+            ->where('receive_user_id',$_SERVER['HTTP_AUTHORIZATION'])
+            ->select($data)
+            ->with(['schedules' => function ($query) {
+                $query->select('schedule_id','order_id','schedule_name','create_time')
+                    ->orderBy('create_time','desc')
+                    ->take(1);
             }])
-            ->first()
-            ->toArray();
+            ->paginate($this->page);
         return $res['orders'];
     }
 
     public function completeOrder($repair_id){
         $data = ['order_id','order_desc','state','repaire_time','channel_equipment_id'];
-        $res = ChannelEquipment::where('repair_id',$repair_id)
-            ->with(['orders'=>function($query) use($data){
-                $query->where('state',3)->where('receive_status',1)->where('receive_user_id',$_SERVER['HTTP_AUTHORIZATION'])->select($data)->with('schedules')->paginate($this->page);
+        $res = Order::where('repair_id',$repair_id)
+            ->where('state',3)
+            ->where('receive_status',1)
+            ->where('receive_user_id',$_SERVER['HTTP_AUTHORIZATION'])
+            ->select($data)
+            ->with(['schedules' => function ($query) {
+                $query->select('schedule_id','order_id','schedule_name','create_time')
+                    ->orderBy('create_time','desc')
+                    ->take(1);
             }])
-            ->first()
-            ->toArray();
+            ->paginate($this->page);
+
         return $res['orders'];
     }
 
     public function evaluatedOrder($repair_id){
         $data = ['order_id','order_desc','state','repaire_time','channel_equipment_id'];
-        $res = ChannelEquipment::where('repair_id',$repair_id)
-            ->with(['orders'=>function($query) use($data){
-                $query->where('state',4)->where('receive_status',1)->where('receive_user_id',$_SERVER['HTTP_AUTHORIZATION'])->select($data)->with('schedules')->paginate($this->page);
+        $res = Order::where('repair_id',$repair_id)
+            ->where('state',4)
+            ->where('receive_status',1)
+            ->where('receive_user_id',$_SERVER['HTTP_AUTHORIZATION'])
+            ->select($data)
+            ->with(['schedules' => function ($query) {
+                $query->select('schedule_id','order_id','schedule_name','create_time')
+                    ->orderBy('create_time','desc')
+                    ->take(1);
             }])
-            ->first()
-            ->toArray();
-        return $res['orders'];
+            ->paginate($this->page);
+
+        return $res;
     }
 
-    protected function forUser(){
+    public function addSchedules($desc,$place,$user_id,$repaire_id,$order_id,$time,$status){
+        $uuid = Uuid::generate(1);
+        $_data = array(
+            'order_id' => $order_id,
+            'schedule_name' => $desc,
+            'create_time' => $time,
+            'place' => $place,
+            'user_id' => $user_id,
+            'schedule_id' => $uuid->string,
+            'status' => $status,
+            'repaire_id' => $repaire_id
+        );
 
+        return OrderSchedule::create($_data);
+    }
+
+    public function allOrders($repair_id){
+        $data = ['order_id','order_desc','state','repaire_time','channel_equipment_id'];
+        $res = Order::where('repaire_id',$repair_id)
+            ->with(['schedules' => function ($query) {
+                $query->select('schedule_id','order_id','schedule_name','create_time')
+                    ->orderBy('create_time','desc')
+                    ->take(1);
+            }])
+            ->select($data)
+            ->paginate($this->page);
+
+        return $res;
     }
 }

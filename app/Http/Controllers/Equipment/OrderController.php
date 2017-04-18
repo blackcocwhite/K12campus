@@ -19,6 +19,7 @@ use App\Model\Equipment\Order;
 use App\Model\Equipment\User;
 use Carbon\Carbon;
 use App\Http\Controllers\Controller;
+use DB;
 
 class OrderController extends Controller
 {
@@ -132,6 +133,45 @@ class OrderController extends Controller
         $input = $request->all();
         $validator = Validator::make($input, [
             'order_id' => 'required',
+//            'repaire_id' => 'required',
+            'place' => 'required'
+        ]);
+
+        if ($validator->fails()) {
+            return array('status' => 0, 'errmsg' => '缺失参数!');
+        }
+
+        $repaire_id = User::where('user_id',$_SERVER['HTTP_AUTHORIZATION'])->value('repaire_id');
+        $_list = DB::table('app_jiaozhuang_order')
+            ->join('app_jiaozhuang_channel_equipment', 'app_jiaozhuang_order.channel_equipment_id', '=', 'app_jiaozhuang_channel_equipment.channel_equipment_id')
+            ->where('app_jiaozhuang_channel_equipment.repair_id',$repaire_id)
+            ->lists('order_id');
+        if(in_array($input['order_id'],$_list)){
+            $now = Carbon::now();
+            DB::beginTransaction();
+            $res1 = Order::where('order_id',$input['order_id'])->where('receive_status',0)
+            ->update([
+                'receive_user_id' => $_SERVER['HTTP_AUTHORIZATION'],
+                'receive_status' => 1,
+                'create_time'=>$now,
+                'receive_time' => $now
+            ]);
+            $res2 = $this->order->addSchedules('接单成功',$input['place'],$_SERVER['HTTP_AUTHORIZATION'],$repaire_id,$input['order_id'],$now,2);
+            if($res1 && $res2){
+                DB::commit();
+                return array('status'=>1);
+            }else{
+                DB::rollBack();
+                return array('status'=>0,'errmsg'=>'接受工单失败，请重试');
+            }
+        }
+    }
+
+    //确认上门
+    public function confirmVisit(Request $request){
+        $input = $request->all();
+        $validator = Validator::make($input, [
+            'order_id' => 'required',
             'repaire_id' => 'required',
             'place' => 'required'
         ]);
@@ -139,35 +179,146 @@ class OrderController extends Controller
         if ($validator->fails()) {
             return array('status' => 0, 'errmsg' => '缺失参数!');
         }
-    }
 
-    //确认上门
-    public function confirmVisit(){
+        if($_SERVER['HTTP_AUTHORIZATION'] == Order::where('order_id',$input['order_id'])->value('receive_user_id')){
+            $now = Carbon::now();
+            DB::beginTransaction();
+            $res1 = Order::where('order_id',$input['order_id'])->where('receive_status',1)
+                ->update([
+                    'is_visit' => 1,
+                    'create_time'=>$now,
+                ]);
+            $res2 = $this->order->addSchedules('第一次上门',$input['place'],$_SERVER['HTTP_AUTHORIZATION'],$input['repaire_id'],$input['order_id'],$now,2);
+            if($res1 && $res2){
+                DB::commit();
+                return array('status'=>1);
+            }else{
+                DB::rollBack();
+                return array('status'=>0,'errmsg'=>'确认上门失败，请重试');
+            }
+        }
 
     }
 
     //添加点位
-    public function addPoint(){
-
+    public function addPoint(Request $request){
+        $input = $request->all();
+        $validator = Validator::make($input, [
+            'order_id' => 'required',
+            'repaire_place_name' => 'required',
+        ]);
+        if ($validator->fails()) {
+            return array('status' => 0, 'errmsg' => '缺失参数!');
+        }
+        if($_SERVER['HTTP_AUTHORIZATION'] == Order::where('order_id',$input['order_id'])->value('receive_user_id')){
+            $now = Carbon::now();
+            DB::beginTransaction();
+            $res1 = Order::where('order_id',$input['order_id'])->where('receive_status',1)
+                ->update([
+                    'is_point' => 1,
+                ]);
+            $uuid = Uuid::generate(1);
+            $_insert = array(
+                'repaire_place_id' => $uuid->string,
+                'repaire_place_name' => $input['repaire_place_name'],
+                'repaire_id' => User::where('user_id',$_SERVER['HTTP_AUTHORIZATION'])->value('repaire_id'),
+                'order_id' => $input['order_id']
+            );
+            $res2 = DB::table('app_jiaozhuang_repaire_place')->insert($_insert);
+//            $res3 = $this->order->addSchedules('添加点位',$input['place'],$_SERVER['HTTP_AUTHORIZATION'],$input['repaire_id'],$input['order_id'],$now,2);
+            if($res1 && $res2){
+                DB::commit();
+                return array('status'=>1);
+            }else{
+                DB::rollBack();
+                return array('status'=>0,'errmsg'=>'添加点位失败，请重试');
+            }
+        }
     }
 
     //删除点位
-    public function deletePoint(){
+    public function deletePoint(Request $request){
+        $input = $request->all();
+        $validator = Validator::make($input, [
+            'order_id' => 'required',
+            'repaire_place_id' => 'required',
+        ]);
+        if ($validator->fails()) {
+            return array('status' => 0, 'errmsg' => '缺失参数!');
+        }
+        if($_SERVER['HTTP_AUTHORIZATION'] == Order::where('order_id',$input['order_id'])->value('receive_user_id')){
 
+            DB::beginTransaction();
+            $res1 = DB::table('app_jiaozhuang_repaire_place')->where('repaire_place_id',$input['repaire_place_id'])->delete();
+            if(DB::table('app_jiaozhuang_repaire_place')->where('order_id',$input['order_id'])->count()<1){
+                $res2 = Order::where('order_id',$input['order_id'])
+                    ->update(['is_point' => 0]);
+            }
+            if ($res1 && $res2) {
+                DB::commit();
+                return array('status' => 1);
+            }else{
+                DB::rollback();//事务回滚
+                return array('status' => 0, 'errmsg' => '删除点位失败!');
+            }
+        }
     }
 
     //添加进度
-    public function addSchedule(){
-
+    public function addSchedule(Request $request){
+        $input = $request->all();
+        $validator = Validator::make($input, [
+            'order_id' => 'required',
+            'schedule_name' => 'required',
+            'repaire_id' => 'required',
+            'place' => 'required'
+        ]);
+        if ($validator->fails()) {
+            return array('status' => 0, 'errmsg' => '缺失参数!');
+        }
+        if(!$_SERVER['HTTP_AUTHORIZATION'] == Order::where('order_id',$input['order_id'])->value('receive_user_id')) {
+            return array('status' => 0, 'errmsg' => '工单号与用户不匹配,添加进度失败');
+        }
+        if ($this->order->addSchedules($input['schedule_name'], $input['place'], $_SERVER['HTTP_AUTHORIZATION'], $input['repaire_id'], $input['order_id'], Carbon::now(), 2)) {
+            return array('status' => 1);
+        }else{
+            return array('status' => 0, 'errmsg' => '添加进度失败,请重试');
+        }
     }
 
     //确认完成维修订单
-    public function confirmComplete(){
+    public function confirmComplete(Request $request){
+        $input = $request->all();
+        $validator = Validator::make($input, [
+            'order_id' => 'required',
+            'repaire_id' => 'required'
+        ]);
+        if ($validator->fails()) {
+            return array('status' => 0, 'errmsg' => '缺失参数!');
+        }
+        if(!$_SERVER['HTTP_AUTHORIZATION'] == Order::where('order_id',$input['order_id'])->value('receive_user_id')) {
+            return array('status' => 0, 'errmsg' => '工单号与用户不匹配,添加进度失败');
+        }
 
+        $money = DB::table('app_jiaozhuang_repaire_project')->where('repaire_id',$input['repaire_id'])->value('money');
+        $num = DB::table('app_jiaozhuang_repaire_place')->where('order_id',$input['order_id'])->count();
+        DB::beginTransaction();
+        $res1 = Order::where('order_id',$input['order_id'])->where('is_point',1)->where('is_visit',1)
+            ->update(['state'=>3,'create_time'=>Carbon::now(),'total_money'=>$money*$num]);
+        $res2 = $this->order->addSchedules('待评价',$input['place'],$_SERVER['HTTP_AUTHORIZATION'],$input['repaire_id'],$input['order_id'],Carbon::now(),2);
+
+        if($res1 && $res2){
+            DB::commit();
+            return array('status'=>1);
+        }else{
+            DB::rollback();
+            return array('status'=>0,'errmsg'=>'确认完成失败!');
+        }
     }
 
     //负责人全部工单查看
     public function allOrders(){
-
+        $repaire_id = User::where('user_id',$_SERVER['HTTP_AUTHORIZATION'])->value('repaire_id');
+        return $this->order->allOrders($repaire_id);
     }
 }

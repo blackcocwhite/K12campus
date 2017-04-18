@@ -28,7 +28,7 @@ class Order extends Model{
 
     public function equipments()
     {
-        return $this->belongsTo('App\Model\Equipment\ChannelEquipment');
+        return $this->belongsTo('App\Model\Equipment\ChannelEquipment','channel_equipment_id');
     }
     /**
      * 待接单的工单
@@ -61,4 +61,5 @@ class Order extends Model{
     public function scopeOfType($query,$state,$receive_status){
         return $query->where('state',$state)->where('receive_status',$receive_status);
     }
+
 }

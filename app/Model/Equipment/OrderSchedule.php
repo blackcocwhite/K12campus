@@ -8,6 +8,8 @@ class OrderSchedule extends Model
 {
     protected $table = 'app_jiaozhuang_schedule';
     protected $primaryKey = 'schedule_id';
+    protected $guarded = ['createAt','updateAt'];
+    public $timestamps = false;
 
     public function order()
     {

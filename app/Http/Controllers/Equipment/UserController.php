@@ -67,6 +67,7 @@ class UserController extends Controller
             }
             $return['data']['repaire_id'] = $auth['repaire_id'];
             $return['data']['mobile'] = $input['mobile'];
+            $return['data']['flag'] = $_info['flag'];
             return $return;
         }else{
             return $return;
@@ -103,6 +104,7 @@ class UserController extends Controller
             $return['data']['userId'] = $_SERVER['HTTP_AUTHORIZATION'];
             $return['data']['repaire_id'] = $auth['repaire_id'];
             $return['data']['mobile'] = $input['mobile'];
+            $return['data']['flag'] = $_info['flag'];
             return $return;
         }else{
             return array('status'=>0,'errmsg'=>'维修负责人关联失败！');
