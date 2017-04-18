@@ -23,7 +23,6 @@ Route::group(['namespace' => 'Equipment','middleware' => 'wechat.user'], functio
     Route::post('/create',"OrderController@create");
     Route::get('/login',"UserController@login");
     Route::post('/checkAccendant',"UserController@associateRepairer");
-
 });
 
 /****教育装备客服系统----维修端****/

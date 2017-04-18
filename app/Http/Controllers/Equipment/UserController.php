@@ -92,7 +92,7 @@ class UserController extends Controller
             $_info = array(
                 'repaire_id' => $auth['repaire_id'],
                 'user_id' => $_SERVER['HTTP_AUTHORIZATION'],
-                'flag' => 0,
+                'flag' => $auth['repaire_phone'] == $input['mobile'] ? 1 : 0,
                 'parent_id' => '',
                 'identity' => $auth['identity']
             );
@@ -117,16 +117,17 @@ class UserController extends Controller
      */
     protected function check_accendant($mobile){
         $status = 0;//标识维修商
-        if (!$auth = DB::table('app_jiaozhuang_repaire')->where('repaire_phone', $mobile)->select('repaire_id','repaire_user_name as displayName')->get()) {
+        if (!$auth = DB::table('app_jiaozhuang_repaire')->where('repaire_phone', $mobile)->select('repaire_id','repaire_user_name as displayName','repaire_phone')->get()) {
             $status = 1;
 
-            if (!$auth = DB::table('app_jiaozhuang_supply')->where('supply_mobile',  $mobile)->select('supply_id as repaire_id','supply_user_name as displayName')->get())
+            if (!$auth = DB::table('app_jiaozhuang_supply')->where('supply_mobile',  $mobile)->select('supply_id as repaire_id','supply_user_name as displayName','supply_mobile as repaire_phone')->get())
                 return false;
         }
         $array = [];
         foreach ($auth as $item) {
             $array['repaire_id'] = $item->repaire_id;
             $array['displayName'] = $item->displayName;
+            $array['repaire_phone'] = $item->repaire_phone;
         }
         $array['identity'] = $status;
         return $array;
