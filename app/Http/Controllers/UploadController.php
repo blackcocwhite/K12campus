@@ -6,86 +6,31 @@ use Illuminate\Http\Request;
 Use Storage;
 use App\Http\Requests;
 use App\Http\Controllers\Controller;
+use Uuid;
 
 class UploadController extends Controller
 {
     /**
-     * Display a listing of the resource.
-     *
-     * @return \Illuminate\Http\Response
+     * 七牛云上传图片接口
+     * @param Request $request
+     * @return array
      */
     public function index(Request $request)
     {
         $fileContents = $request->file('file');
-        $filename = $fileContents->getClientOriginalName();
+        $folder = $request->folder;
+//        $filename = $fileContents->getClientOriginalName();
+//        $mimetype = $fileContents->getMimeType();
+        $extension = $fileContents->getClientOriginalExtension();
+        $_uuid = Uuid::generate(1);
+        $filename = $_uuid->string.'.'.$extension;
         $disk = Storage::disk('qiniu');
-        $imgurl = $disk->put('Equipment/'.$filename, file_get_contents($fileContents));
-        return array('status'=>$imgurl);
+        $status = $disk->put($folder.'/'.$filename, file_get_contents($fileContents));
+        if($status){
+            return array('status'=>1,'imgurl'=>"http://upload.8dsun.com/Equipment/$filename");
+        }else{
+            return array('status'=>0);
+        }
     }
 
-    /**
-     * Show the form for creating a new resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
-    public function create()
-    {
-        //
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
-    public function store(Request $request)
-    {
-        //
-    }
-
-    /**
-     * Display the specified resource.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function show($id)
-    {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function edit($id)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function update(Request $request, $id)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function destroy($id)
-    {
-        //
-    }
 }

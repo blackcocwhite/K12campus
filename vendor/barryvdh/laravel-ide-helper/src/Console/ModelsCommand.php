@@ -56,6 +56,10 @@ class ModelsCommand extends Command
     protected $write = false;
     protected $dirs = array();
     protected $reset;
+    /**
+     * @var bool[string]
+     */
+    protected $nullableColumns = [];
 
     /**
      * @param Filesystem $files
@@ -202,8 +206,9 @@ class ModelsCommand extends Command
                     }
 
                     $this->getPropertiesFromMethods($model);
-                    $output .= $this->createPhpDocs($name);
-                    $ignore[] = $name;
+                    $output                .= $this->createPhpDocs($name);
+                    $ignore[]              = $name;
+                    $this->nullableColumns = [];
                 } catch (\Exception $e) {
                     $this->error("Exception: " . $e->getMessage() . "\nCould not analyze class $name.");
                 }
@@ -347,14 +352,12 @@ class ModelsCommand extends Command
                         case 'integer':
                         case 'bigint':
                         case 'smallint':
+                        case 'boolean':
                             $type = 'integer';
                             break;
                         case 'decimal':
                         case 'float':
                             $type = 'float';
-                            break;
-                        case 'boolean':
-                            $type = 'boolean';
                             break;
                         default:
                             $type = 'mixed';
@@ -363,7 +366,10 @@ class ModelsCommand extends Command
                 }
 
                 $comment = $column->getComment();
-                $this->setProperty($name, $type, true, true, $comment);
+                if (!$column->getNotnull()) {
+                    $this->nullableColumns[$name] = true;
+                }
+                $this->setProperty($name, $type, true, true, $comment, !$column->getNotnull());
                 if ($this->write_model_magic_where) {
                     $this->setMethod(
                         Str::camel("where_" . $name),
@@ -472,7 +478,14 @@ class ModelsCommand extends Command
                                     );
                                 } else {
                                     //Single model is returned
-                                    $this->setProperty($method, $relatedModel, true, null);
+                                    $this->setProperty(
+                                        $method,
+                                        $relatedModel,
+                                        true,
+                                        null,
+                                        '',
+                                        $this->isRelationForeignKeyNullable($relationObj)
+                                    );
                                 }
                             }
                         }
@@ -483,13 +496,33 @@ class ModelsCommand extends Command
     }
 
     /**
-     * @param string $name
-     * @param string|null $type
-     * @param bool|null $read
-     * @param bool|null $write
-     * @param string|null $comment
+     * Check if the foreign key of the relation is nullable
+     *
+     * @param Relation $relation
+     *
+     * @return bool
      */
-    protected function setProperty($name, $type = null, $read = null, $write = null, $comment = '')
+    private function isRelationForeignKeyNullable(Relation $relation)
+    {
+        $reflectionObj = new \ReflectionObject($relation);
+        if (!$reflectionObj->hasProperty('foreignKey')) {
+            return false;
+        }
+        $fkProp = $reflectionObj->getProperty('foreignKey');
+        $fkProp->setAccessible(true);
+
+        return isset($this->nullableColumns[$fkProp->getValue($relation)]);
+    }
+
+    /**
+     * @param string      $name
+     * @param string|null $type
+     * @param bool|null   $read
+     * @param bool|null   $write
+     * @param string|null $comment
+     * @param bool        $nullable
+     */
+    protected function setProperty($name, $type = null, $read = null, $write = null, $comment = '', $nullable = false)
     {
         if (!isset($this->properties[$name])) {
             $this->properties[$name] = array();
@@ -499,7 +532,11 @@ class ModelsCommand extends Command
             $this->properties[$name]['comment'] = (string) $comment;
         }
         if ($type !== null) {
-            $this->properties[$name]['type'] = $this->getTypeOverride($type);
+            $newType = $this->getTypeOverride($type);
+            if ($nullable) {
+                $newType .='|null';
+            }
+            $this->properties[$name]['type'] = $newType;
         }
         if ($read !== null) {
             $this->properties[$name]['read'] = $read;

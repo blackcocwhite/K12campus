@@ -150,6 +150,12 @@ return [
 
         /*idehelper*/
         Barryvdh\LaravelIdeHelper\IdeHelperServiceProvider::class,
+
+        /*EasyWeChat*/
+        Overtrue\LaravelWechat\ServiceProvider::class,
+
+        // Other service providers...
+        Overtrue\LaravelFilesystem\Qiniu\QiniuStorageServiceProvider::class,
     ],
 
     /*
@@ -198,7 +204,11 @@ return [
         'Validator' => Illuminate\Support\Facades\Validator::class,
         'View'      => Illuminate\Support\Facades\View::class,
 
-        'Uuid' => Webpatser\Uuid\Uuid::class
+//        'Api'       => Dingo\Api\Facade\API::class,
+//        'ApiRoute'  => Dingo\Api\Facade\Route::class,
+
+        'Uuid' => Webpatser\Uuid\Uuid::class,
+        'EasyWeChat' => Overtrue\LaravelWechat\Facade::class,
     ],
 
 ];

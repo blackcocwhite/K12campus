@@ -26,7 +26,7 @@ class OrderRepository
      */
     public function forOrderId($order_id)
     {
-        $data = ['order_id','state','create_time','order_desc','creator_id','place','user_name','mobile','org_name','channel_id','repaire_time','is_point','is_visit'];
+        $data = ['order_id','state','create_time','order_desc','creator_id','place','user_name','mobile','org_name','channel_id','repaire_time','is_point','is_visit','receive_status'];
         return Order::where('order_id', $order_id)
             ->select($data)
             ->with('images','schedules','places')
@@ -55,7 +55,7 @@ class OrderRepository
 
     public function pendingOrder($repair_id){
         $data = ['order_id','order_desc','state','repaire_time','channel_equipment_id'];
-        $res = Order::where('repair_id',$repair_id)
+        $res = Order::where('repaire_id',$repair_id)
             ->where('state',2)
             ->where('receive_status',0)
             ->select($data)
@@ -71,7 +71,7 @@ class OrderRepository
 
     public function handingOrder($repair_id){
         $data = ['order_id','order_desc','state','repaire_time','channel_equipment_id'];
-        $res = Order::where('repair_id',$repair_id)
+        $res = Order::where('repaire_id',$repair_id)
             ->where('state',2)
             ->where('receive_status',1)
             ->where('receive_user_id',$_SERVER['HTTP_AUTHORIZATION'])
@@ -82,12 +82,12 @@ class OrderRepository
                     ->take(1);
             }])
             ->paginate($this->page);
-        return $res['orders'];
+        return $res;
     }
 
     public function completeOrder($repair_id){
         $data = ['order_id','order_desc','state','repaire_time','channel_equipment_id'];
-        $res = Order::where('repair_id',$repair_id)
+        $res = Order::where('repaire_id',$repair_id)
             ->where('state',3)
             ->where('receive_status',1)
             ->where('receive_user_id',$_SERVER['HTTP_AUTHORIZATION'])
@@ -98,13 +98,12 @@ class OrderRepository
                     ->take(1);
             }])
             ->paginate($this->page);
-
-        return $res['orders'];
+        return $res;
     }
 
     public function evaluatedOrder($repair_id){
         $data = ['order_id','order_desc','state','repaire_time','channel_equipment_id'];
-        $res = Order::where('repair_id',$repair_id)
+        $res = Order::where('repaire_id',$repair_id)
             ->where('state',4)
             ->where('receive_status',1)
             ->where('receive_user_id',$_SERVER['HTTP_AUTHORIZATION'])

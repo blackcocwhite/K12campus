@@ -9,34 +9,77 @@
 | and give it the controller to call when that URI is requested.
 |
 */
-/****系统注册****/
-Route::get('/checkUser/{openid}',"UserController@login");
-Route::get('/systemRegister/{openid}/{mobile}',"UserController@create");
+Route::get('/login/{user_id}','EequipmentController@login');
+Route::get('/checkAccendant/{name}/{user_id}/{mobile}','EequipmentController@checkAccendant');
+Route::get('/checkHead/{user_id}/{mobile}','EequipmentController@checkHead');
 
-/****教育装备客服系统****/
-Route::post('/doRegister',"Equipment\UserController@postRegister");//如果是负责人直接注册 则直接关联
+Route::get('/pendingOrder/{user_id}','EequipmentController@pendingOrder');
+Route::get('/handingOrder/{user_id}','EequipmentController@handingOrder');
+Route::get('/completeOrder/{user_id}','EequipmentController@completeOrder');
+Route::get('/evaluatedOrder/{user_id}','EequipmentController@evaluatedOrder');
 
-/****教育装备客服系统----报修端****/
-Route::group(['namespace' => 'Equipment','middleware' => 'wechat.user'], function () {
-    Route::get('/teacher',"OrderController@repairOrderList");
-    Route::get('/order/{order_id}',"OrderController@orderInformation");
-    Route::post('/create',"OrderController@create");
-    Route::get('/login',"UserController@login");
-    Route::post('/checkAccendant',"UserController@associateRepairer");
+Route::post('/receiveOrder','EequipmentController@receiveOrder');
+Route::post('/confirmVisit','EequipmentController@confirmVisit');
+Route::post('/addSchedule','EequipmentController@addSchedule');
+Route::post('/addPoint','EequipmentController@addPoint');
+Route::post('/deletePoint','EequipmentController@deletePoint');
+Route::post('/confirmComplete','EequipmentController@confirmComplete');
+Route::get('/getOrder/{order_id}','EequipmentController@getOrder');
+
+Route::post('/createOrder','EequipmentController@createOrder');
+
+Route::get('/orderList/{user_id}','EequipmentController@orderList');
+Route::post('/evaluate','EequipmentController@evaluate');
+Route::get('/allOrders','EequipmentController@allOrders');
+
+
+
+Route::group(['prefix'=>'v1'], function () {
+    /****系统注册****/
+    Route::get('/checkUser/{openid}',"UserController@login");
+    Route::get('/systemRegister/{openid}/{mobile}',"UserController@create");
+
+    /****教育装备客服系统****/
+    Route::post('/doRegister',"Equipment\UserController@postRegister");//如果是负责人直接注册 则直接关联
+
+    /****教育装备客服系统----报修端****/
+    Route::group(['namespace' => 'Equipment','middleware' => 'wechat.user'], function () {
+        Route::get('/orderList',"OrderController@repairOrderList"); //报修人员工单列表
+        Route::get('/getOrder/{order_id}',"OrderController@orderInformation");
+        Route::post('/createOrder',"OrderController@create");
+
+        Route::get('/login',"UserController@login");
+        Route::post('/checkAccendant',"UserController@associateRepairer");
+
+        Route::post('/evaluate',"OrderController@evaluate");
+    });
+
+    /****教育装备客服系统----维修端****/
+    Route::group(['namespace' => 'Equipment','middleware' => 'equipmentAuth'], function () {
+        Route::get('/pendingOrder',"OrderController@pendingOrderList");
+        Route::get('/handingOrder',"OrderController@handingOrderList");
+        Route::get('/completeOrder',"OrderController@completeOrderList");
+        Route::get('/evaluatedOrder',"OrderController@evaluatedOrderList");
+
+        Route::post('/receiveOrder',"OrderController@receiveOrder");
+        Route::post('/confirmVisit',"OrderController@confirmVisit");
+        Route::post('/addPoint',"OrderController@addPoint");
+        Route::post('/deletePoint',"OrderController@deletePoint");
+        Route::post('/addSchedule',"OrderController@addSchedule");
+        Route::post('/confirmComplete',"OrderController@confirmComplete");
+        Route::get('/allOrders',"OrderController@allOrders");
+    });
 });
 
-/****教育装备客服系统----维修端****/
-Route::group(['namespace' => 'Equipment','middleware' => 'equipmentAuth'], function () {
-    Route::get('/pendingOrder',"OrderController@pendingOrderList");
-    Route::get('/handingOrder',"OrderController@handingOrderList");
-    Route::get('/completeOrder',"OrderController@completeOrderList");
-    Route::get('/evaluatedOrder',"OrderController@evaluatedOrderList");
+Route::post('/upload',"UploadController@index");
+Route::post('/postData',"OfficialdataController@store");
 
-    Route::post('/receiveOrder',"OrderController@receiveOrder");
-    Route::post('/confirmVisit',"OrderController@confirmVisit");
-    Route::post('/addPoint',"OrderController@addPoint");
-    Route::post('/deletePoint',"OrderController@deletePoint");
-    Route::post('/addSchedule',"OrderController@addSchedule");
-    Route::post('/confirmComplete',"OrderController@confirmComplete");
-    Route::get('/allOrders',"OrderController@allOrders");
-});
+Route::get('/temporary/questionnaire/index',"OfficialdataController@index");
+Route::get('/temporary/questionnaire/{id}/show',"OfficialdataController@show");
+Route::put('/temporary/questionnaire/{id}',"OfficialdataController@update");
+Route::delete('/temporary/questionnaire/{id}',"OfficialdataController@destroy");
+
+Route::post('/test',"TestController@store");
+
+Route::any('/wechat', 'WechatController@serve');
+

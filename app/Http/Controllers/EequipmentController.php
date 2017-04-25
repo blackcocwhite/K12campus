@@ -21,7 +21,7 @@ class EequipmentController extends Controller
     }
 
     /*验证负责人手机   login失败跳转过来 */
-    public function checkAccendant($userid, $mobile)
+    public function checkAccendant($displayName,$userid, $mobile)
     {
         $_check = $this->_checkPrincipal($mobile);
         if ($_check['status'] === 0) {
@@ -38,6 +38,7 @@ class EequipmentController extends Controller
             $data['flag'] = 0;
             $data['create_time'] = Carbon::now();
             $data['identity'] = $_check['data']['identity'];
+            Predis::hset("user:$userid",'displayName',$displayName);
 
             if (DB::table('app_jiaozhuang_repaire_user')->insert($data)) {
                 return array('status' => 1, 'data' => $data);
@@ -364,7 +365,7 @@ class EequipmentController extends Controller
             ->where('order_id','=',$order_id)
             ->first();
         $data->images = DB::table('app_jiaozhuang_img')->where('order_id',$order_id)->get();
-        $data->schedules = DB::table('app_jiaozhuang_schedule')->where('order_id',$order_id)->get();
+        $data->schedules = DB::table('app_jiaozhuang_schedule')->where('order_id',$order_id)->orderBy('create_time','desc')->get();
         $data->places = DB::table('app_jiaozhuang_repaire_place')->where('order_id',$order_id)->get();
 
         return response()->json($data);
@@ -516,6 +517,27 @@ class EequipmentController extends Controller
         }else{
             return array('status'=>0,'errmsg'=>'参数不正确');
         }
+    }
+
+    public function allOrders(){
+        $repaire = DB::table('app_jiaozhuang_repaire_user')->where('user_id',$_SERVER['HTTP_AUTHORIZATION'])->select('repaire_id','flag')->first();
+        if(empty($repaire)){
+            return array('status'=>0,'errmsg'=>'您没有权限');
+        }
+        if($repaire->flag != 1){
+            return array('status' => 0, 'errmsg' => '您没有权限!');
+        }
+        if(!$repaire){
+            return array('status'=>0);
+        }
+        $repaire_id = $repaire->repaire_id;
+        $data = DB::table('app_jiaozhuang_order')
+            ->join('app_jiaozhuang_channel_equipment', 'app_jiaozhuang_order.channel_equipment_id', '=', 'app_jiaozhuang_channel_equipment.channel_equipment_id')
+            ->where('app_jiaozhuang_channel_equipment.repair_id',$repaire_id)
+            ->orderBy('repaire_time')
+            ->get();
+        return array('status' => 1, 'data' => $data);
+
     }
 
 

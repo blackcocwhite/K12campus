@@ -31,7 +31,7 @@ class UserController extends Controller
      */
     public function create($openid,$mobile)
     {
-       return $this->user->systemRegister($openid,$mobile);
+        return $this->user->systemRegister($openid,$mobile);
     }
 
 }

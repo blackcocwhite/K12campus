@@ -80,6 +80,14 @@ return [
             'url_type'  => 'publicURL',
         ],
 
+        'qiniu' => [
+            'driver'     => 'qiniu',
+            'access_key' => env('QINIU_ACCESS_KEY', 'sE_DytQO0uzAIzYTEfrP8uB6FWp9iVM5BaraiAfE'),
+            'secret_key' => env('QINIU_SECRET_KEY', '6VgQgFp4NfG84iCzHJQ8RvV38V3Yh363xm8_fXWO'),
+            'bucket'     => env('QINIU_BUCKET', '8dsun'),
+            'domain'     => env('QINIU_DOMAIN', 'upload.8dsun.com'), // or host: https://xxxx.clouddn.com
+        ],
+
     ],
 
 ];

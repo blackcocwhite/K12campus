@@ -1,0 +1,18 @@
+{
+  "name": "K12campus",
+  "description": "wisdom campus",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "vendor/bower_dl",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "jquery": "^3.2.1",
+    "bootstrap": "^3.3.7",
+    "font-awesome": "fontawesome#^4.7.0",
+    "datatables": "^1.10.15",
+    "datatables-plugins": "^1.10.15"
+  }
+}

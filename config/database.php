@@ -54,10 +54,10 @@ return [
 
         'mysql' => [
             'driver'    => 'mysql',
-            'host'      => env('DB_HOST', 'localhost'),
-            'database'  => env('DB_DATABASE', 'forge'),
-            'username'  => env('DB_USERNAME', 'forge'),
-            'password'  => env('DB_PASSWORD', ''),
+            'host'      => env('DB_HOST', 'rdsf9h118es50ct40q87.mysql.rds.aliyuncs.com:3306'),
+            'database'  => env('DB_DATABASE', 'appgame'),
+            'username'  => env('DB_USERNAME', 'wxjz'),
+            'password'  => env('DB_PASSWORD', 'wxjz8dsun'),
             'charset'   => 'utf8',
             'collation' => 'utf8_unicode_ci',
             'prefix'    => '',
@@ -116,10 +116,10 @@ return [
         'cluster' => false,
 
         'default' => [
-            'host'     => env('REDIS_HOST', '120.26.68.230'),
-            'password' => env('REDIS_PASSWORD', 123),
+            'host'     => env('REDIS_HOST', '97e4ab26b47e4a60.m.cnhza.kvstore.aliyuncs.com'),
+            'password' => env('REDIS_PASSWORD', "97e4ab26b47e4a60:Wxjz8dsun"),
             'port'     => env('REDIS_PORT', 6379),
-            'database' => env('REDIS_DATABASE', 0)
+            'database' => env('REDIS_DATABASE', 1)
         ],
 
     ],
