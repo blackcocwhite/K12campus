@@ -89,10 +89,11 @@ class UserController extends Controller
 
         $auth = $this->check_accendant($input['mobile']);
         if($auth){
+            $mobile = Predis::hget("user:" . $_SERVER['HTTP_AUTHORIZATION'], 'mobile');
             $_info = array(
                 'repaire_id' => $auth['repaire_id'],
                 'user_id' => $_SERVER['HTTP_AUTHORIZATION'],
-                'flag' => $auth['repaire_phone'] == $input['mobile'] ? 1 : 0,
+                'flag' => $auth['repaire_phone'] == $mobile ? 1 : 0,
                 'parent_id' => '',
                 'identity' => $auth['identity']
             );

@@ -1,9 +1,9 @@
 <?php
 
 namespace App\Model\Equipment;
-use Illuminate\Database\Eloquent\Model;
 
-class Order extends Model{
+class Order extends BaseModel
+{
 
     protected $table = 'app_jiaozhuang_order';
     protected $primaryKey = 'order_id';
@@ -58,8 +58,19 @@ class Order extends Model{
         return $query->where('state', 3)->where('receive_status',1);
     }
 
-    public function scopeOfType($query,$state,$receive_status){
+    public function scopeOfType($query, $state, $receive_status)
+    {
         return $query->where('state',$state)->where('receive_status',$receive_status);
+    }
+
+    /**
+     * Get latest 5 comments from hasMany relation.
+     *
+     * @return Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function latestSchedules()
+    {
+        return $this->schedules()->orderBy('create_time', 'desc')->nPerGroup('order_id', 1);
     }
 
 }

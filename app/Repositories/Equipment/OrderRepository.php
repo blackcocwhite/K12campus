@@ -29,7 +29,11 @@ class OrderRepository
         $data = ['order_id','state','create_time','order_desc','creator_id','place','user_name','mobile','org_name','channel_id','repaire_time','is_point','is_visit','receive_status'];
         return Order::where('order_id', $order_id)
             ->select($data)
-            ->with('images','schedules','places')
+            ->with('images', 'places')
+            ->with(['latestSchedules' => function ($query) {
+                $query->select('schedule_id', 'order_id', 'schedule_name', 'create_time')
+                    ->get();
+            }])
             ->get();
     }
     /**
@@ -43,10 +47,9 @@ class OrderRepository
     {
         $data = ['order_id','order_desc','state','repaire_time'];
         return Order::where('creator_id', $user_id)
-            ->with(['schedules' => function ($query) {
+            ->with(['latestSchedules' => function ($query) {
                 $query->select('schedule_id','order_id','schedule_name','create_time')
-                    ->orderBy('create_time','desc')
-                    ->take(1);
+                    ->get();
             }])
             ->select($data)
             ->orderBy('repaire_time','desc')
@@ -59,10 +62,9 @@ class OrderRepository
             ->where('state',2)
             ->where('receive_status',0)
             ->select($data)
-            ->with(['schedules' => function ($query) {
+            ->with(['latestSchedules' => function ($query) {
                 $query->select('schedule_id','order_id','schedule_name','create_time')
-                    ->orderBy('create_time','desc')
-                    ->take(1);
+                    ->get();
             }])
             ->paginate($this->page);
 
@@ -76,10 +78,9 @@ class OrderRepository
             ->where('receive_status',1)
             ->where('receive_user_id',$_SERVER['HTTP_AUTHORIZATION'])
             ->select($data)
-            ->with(['schedules' => function ($query) {
+            ->with(['latestSchedules' => function ($query) {
                 $query->select('schedule_id','order_id','schedule_name','create_time')
-                    ->orderBy('create_time','desc')
-                    ->take(1);
+                    ->get();
             }])
             ->paginate($this->page);
         return $res;
@@ -92,10 +93,9 @@ class OrderRepository
             ->where('receive_status',1)
             ->where('receive_user_id',$_SERVER['HTTP_AUTHORIZATION'])
             ->select($data)
-            ->with(['schedules' => function ($query) {
+            ->with(['latestSchedules' => function ($query) {
                 $query->select('schedule_id','order_id','schedule_name','create_time')
-                    ->orderBy('create_time','desc')
-                    ->take(1);
+                    ->get();
             }])
             ->paginate($this->page);
         return $res;
@@ -108,10 +108,9 @@ class OrderRepository
             ->where('receive_status',1)
             ->where('receive_user_id',$_SERVER['HTTP_AUTHORIZATION'])
             ->select($data)
-            ->with(['schedules' => function ($query) {
+            ->with(['latestSchedules' => function ($query) {
                 $query->select('schedule_id','order_id','schedule_name','create_time')
-                    ->orderBy('create_time','desc')
-                    ->take(1);
+                    ->get();
             }])
             ->paginate($this->page);
 
@@ -137,10 +136,9 @@ class OrderRepository
     public function allOrders($repair_id){
         $data = ['order_id','order_desc','state','repaire_time','channel_equipment_id'];
         $res = Order::where('repaire_id',$repair_id)
-            ->with(['schedules' => function ($query) {
+            ->with(['latestSchedules' => function ($query) {
                 $query->select('schedule_id','order_id','schedule_name','create_time')
-                    ->orderBy('create_time','desc')
-                    ->take(1);
+                    ->get();
             }])
             ->select($data)
             ->paginate($this->page);

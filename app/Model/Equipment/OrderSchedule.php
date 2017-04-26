@@ -2,9 +2,7 @@
 
 namespace App\Model\Equipment;
 
-use Illuminate\Database\Eloquent\Model;
-
-class OrderSchedule extends Model
+class OrderSchedule extends BaseModel
 {
     protected $table = 'app_jiaozhuang_schedule';
     protected $primaryKey = 'schedule_id';
@@ -15,4 +13,10 @@ class OrderSchedule extends Model
     {
         return $this->belongsTo('App\Model\Eequipment\Order');
     }
+
+    public function scopeOne($q)
+    {
+        return $q->take(1);
+    }
+
 }
