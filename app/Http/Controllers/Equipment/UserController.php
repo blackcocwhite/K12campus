@@ -50,7 +50,7 @@ class UserController extends Controller
         if ($validator->fails()) {
             return array('status' => 0, 'errmsg' => '缺失参数!');
         }
-        $return = $systemUser->systemRegister($input['openid'],$input['mobile']);
+        $return = $systemUser->systemRegister($input['openid'],$input['mobile'],$input['wappid']);
         if($return['status']){
             if($auth = $this->check_accendant($input['mobile'])){
                 $systemUser->_modifyUser($input['openid'],'displayName',$auth['displayName']);
@@ -64,17 +64,20 @@ class UserController extends Controller
                 if(!$this->doRegister($_info,"wechat.user:".$input['openid'])){
                     return array('stauts'=>0,'errmsg'=>'注册失败！');
                 }
+                $return['data']['repaire_id'] = $auth['repaire_id'];
+                $return['data']['flag'] = $_info['flag'];
+            }else{
+                $return['data']['flag'] = 0;
             }
-            $return['data']['repaire_id'] = $auth['repaire_id'];
+
             $return['data']['mobile'] = $input['mobile'];
-            $return['data']['flag'] = $_info['flag'];
             return $return;
         }else{
             return $return;
         }
     }
 
-    public function associateRepairer(Request $request,UserRepository $systemUser)
+    public function  associateRepairer(Request $request,UserRepository $systemUser)
     {
         $input = $request->all();
 
@@ -100,7 +103,7 @@ class UserController extends Controller
             if(!$this->doRegister($_info)){
                 return array('stauts'=>0,'errmsg'=>'注册失败！');
             }
-            $systemUser->_modifyUser($input['openid'],'displayName',$auth['displayName']);
+            $systemUser->_modifyUser($input['openid'],'displayName',$input['displayName']);
             $return = array('status'=>1);
             $return['data']['userId'] = $_SERVER['HTTP_AUTHORIZATION'];
             $return['data']['repaire_id'] = $auth['repaire_id'];
@@ -135,6 +138,9 @@ class UserController extends Controller
     }
 
     protected function doRegister(Array $arr,$_keys=''){
+        if(User::where('user_id',$arr['user_id'])->first()){
+            return true;
+        }
         $uid = Uuid::generate(1);
         $arr['repaire_user_id'] = $uid->string;
         $arr['create_time'] = Carbon::now();

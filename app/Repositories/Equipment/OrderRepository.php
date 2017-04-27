@@ -30,8 +30,9 @@ class OrderRepository
         return Order::where('order_id', $order_id)
             ->select($data)
             ->with('images', 'places')
-            ->with(['latestSchedules' => function ($query) {
-                $query->select('schedule_id', 'order_id', 'schedule_name', 'create_time')
+            ->with(['Schedules' => function ($query) {
+                $query->select('schedule_id', 'order_id', 'schedule_name', 'create_time','place')
+                    ->orderBy("create_time","desc")
                     ->get();
             }])
             ->get();

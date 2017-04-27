@@ -2,4 +2,8 @@
 /node_modules
 Homestead.yaml
 Homestead.json
-.env
+#.env
+/storage/logs
+/config/app.php
+.bowerrc
+.idea/watcherTasks.xml

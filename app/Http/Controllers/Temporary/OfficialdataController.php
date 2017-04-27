@@ -1,12 +1,11 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Temporary;
 
-use Illuminate\Http\Request;
-
-use App\Http\Requests;
 use App\Http\Controllers\Controller;
-use App\Model\Officialdata;
+use Illuminate\Http\Request;
+use App\Http\Requests;
+use App\Model\Temporary\Officialdata;
 
 class OfficialdataController extends Controller
 {

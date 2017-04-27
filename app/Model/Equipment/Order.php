@@ -26,38 +26,6 @@ class Order extends BaseModel
         return $this->hasMany('App\Model\Equipment\OrderPlace');
     }
 
-    public function equipments()
-    {
-        return $this->belongsTo('App\Model\Equipment\ChannelEquipment','channel_equipment_id');
-    }
-    /**
-     * 待接单的工单
-     * @param $query
-     * @return mixed
-     */
-    public function scopePending($query)
-    {
-        return $query->where('state', 2)->where('receive_status',0);
-    }
-    /**
-     * 已接单的工单
-     * @param $query
-     * @return mixed
-     */
-    public function scopeHanding($query)
-    {
-        return $query->where('state', 2)->where('receive_status',1);
-    }
-    /**
-     * 已完成的工单
-     * @param $query
-     * @return mixed
-     */
-    public function scopeComplete($query)
-    {
-        return $query->where('state', 3)->where('receive_status',1);
-    }
-
     public function scopeOfType($query, $state, $receive_status)
     {
         return $query->where('state',$state)->where('receive_status',$receive_status);

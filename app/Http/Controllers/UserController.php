@@ -29,9 +29,9 @@ class UserController extends Controller
      * @param $mobile
      * @return array
      */
-    public function create($openid,$mobile)
+    public function create($openid,$mobile,$wappid)
     {
-        return $this->user->systemRegister($openid,$mobile);
+        return $this->user->systemRegister($openid,$mobile,$wappid);
     }
 
 }

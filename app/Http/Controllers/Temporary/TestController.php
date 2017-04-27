@@ -1,16 +1,17 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Temporary;
 
 use Illuminate\Http\Request;
 
 use App\Http\Requests;
 use App\Http\Controllers\Controller;
-use App\Test;
+use App\Model\Temporary\Test;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 use Uuid;
 use Predis;
+
 class TestController extends Controller
 {
     protected $fields = [

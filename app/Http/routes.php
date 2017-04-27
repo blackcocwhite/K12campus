@@ -12,7 +12,7 @@
 Route::group(['prefix'=>'v1'], function () {
     /****系统注册****/
     Route::get('/checkUser/{openid}',"UserController@login");
-    Route::get('/systemRegister/{openid}/{mobile}',"UserController@create");
+    Route::get('/systemRegister/{openid}/{mobile}/{wappid}',"UserController@create");
 
     /****教育装备客服系统****/
     Route::post('/doRegister',"Equipment\UserController@postRegister");//如果是负责人直接注册 则直接关联
@@ -49,12 +49,20 @@ Route::group(['prefix'=>'v1'], function () {
 Route::post('/upload',"UploadController@index");
 Route::post('/postData',"OfficialdataController@store");
 
-Route::get('/temporary/questionnaire/index',"OfficialdataController@index");
-Route::get('/temporary/questionnaire/{id}/show',"OfficialdataController@show");
-Route::put('/temporary/questionnaire/{id}',"OfficialdataController@update");
-Route::delete('/temporary/questionnaire/{id}',"OfficialdataController@destroy");
+Route::group(['namespace'=>"Temporary","middleware" => "csrf"],function () {
+    Route::get('/temporary/questionnaire/index',"OfficialdataController@index");
+    Route::get('/temporary/questionnaire/{id}/show',"OfficialdataController@show");
+    Route::put('/temporary/questionnaire/{id}',"OfficialdataController@update");
+    Route::delete('/temporary/questionnaire/{id}',"OfficialdataController@destroy");
+    Route::post('/test',"TestController@store");
+});
 
-Route::post('/test',"TestController@store");
+
+
 
 Route::any('/wechat', 'WechatController@serve');
+
+Route::get('/{vue_capture?}', function () {
+    return view('example');
+});
 

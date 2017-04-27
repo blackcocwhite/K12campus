@@ -143,11 +143,6 @@ class OrderController extends Controller
         }
 
         $repaire_id = User::where('user_id',$_SERVER['HTTP_AUTHORIZATION'])->value('repaire_id');
-//        $_list = DB::table('app_jiaozhuang_order')
-//            ->join('app_jiaozhuang_channel_equipment', 'app_jiaozhuang_order.channel_equipment_id', '=', 'app_jiaozhuang_channel_equipment.channel_equipment_id')
-//            ->where('app_jiaozhuang_channel_equipment.repair_id',$repaire_id)
-//            ->lists('order_id');
-
         if($repaire_id == Order::where('order_id',$input['order_id'])->value('repaire_id')){
             $now = Carbon::now();
             DB::beginTransaction();
@@ -215,12 +210,6 @@ class OrderController extends Controller
             return array('status' => 0, 'errmsg' => '缺失参数!');
         }
         if($_SERVER['HTTP_AUTHORIZATION'] == Order::where('order_id',$input['order_id'])->value('receive_user_id')){
-//            $now = Carbon::now();
-//            DB::beginTransaction();
-//            $res1 = Order::where('order_id',$input['order_id'])->where('receive_status',1)
-//                ->update([
-//                    'is_point' => 1,
-//                ]);
             $uuid = Uuid::generate(1);
             $_insert = array(
                 'repaire_place_id' => $uuid->string,
@@ -228,15 +217,10 @@ class OrderController extends Controller
                 'repaire_id' => User::where('user_id',$_SERVER['HTTP_AUTHORIZATION'])->value('repaire_id'),
                 'order_id' => $input['order_id']
             );
-//            $res2 = DB::table('app_jiaozhuang_repaire_place')->insert($_insert);
             $res = DB::table('app_jiaozhuang_repaire_place')->insert($_insert);
-//            $res3 = $this->order->addSchedules('添加点位',$input['place'],$_SERVER['HTTP_AUTHORIZATION'],$input['repaire_id'],$input['order_id'],$now,2);
-//            if($res1 && $res2){
             if($res){
-//                DB::commit();
                 return array('status'=>1,'data'=>array('repaire_place_id'=>$_insert['repaire_place_id']));
             }else{
-//                DB::rollBack();
                 return array('status'=>0,'errmsg'=>'添加点位失败，请重试');
             }
         }
@@ -254,17 +238,10 @@ class OrderController extends Controller
         }
         if($_SERVER['HTTP_AUTHORIZATION'] == Order::where('order_id',$input['order_id'])->value('receive_user_id')){
 
-//            DB::beginTransaction();
             $res = DB::table('app_jiaozhuang_repaire_place')->where('repaire_place_id',$input['repaire_place_id'])->delete();
-//            if(DB::table('app_jiaozhuang_repaire_place')->where('order_id',$input['order_id'])->count()<1){
-//                $res2 = Order::where('order_id',$input['order_id'])
-//                    ->update(['is_point' => 0]);
-//            }
             if ($res) {
-//                DB::commit();
                 return array('status' => 1);
             }else{
-//                DB::rollback();//事务回滚
                 return array('status' => 0, 'errmsg' => '删除点位失败!');
             }
         }
@@ -297,7 +274,8 @@ class OrderController extends Controller
         $input = $request->all();
         $validator = Validator::make($input, [
             'order_id' => 'required',
-            'repaire_id' => 'required'
+            'repaire_id' => 'required',
+            'place' => 'required'
         ]);
         if ($validator->fails()) {
             return array('status' => 0, 'errmsg' => '缺失参数!');
@@ -309,7 +287,7 @@ class OrderController extends Controller
         $money = DB::table('app_jiaozhuang_repaire_project')->where('repaire_id',$input['repaire_id'])->value('money');
         $num = DB::table('app_jiaozhuang_repaire_place')->where('order_id',$input['order_id'])->count();
         DB::beginTransaction();
-        $res1 = Order::where('order_id',$input['order_id'])->where('is_point',1)->where('is_visit',1)
+        $res1 = Order::where('order_id',$input['order_id'])->where('is_visit',1)
             ->update(['state'=>3,'create_time'=>Carbon::now(),'total_money'=>$money*$num]);
         $res2 = $this->order->addSchedules('待评价',$input['place'],$_SERVER['HTTP_AUTHORIZATION'],$input['repaire_id'],$input['order_id'],Carbon::now(),2);
 
