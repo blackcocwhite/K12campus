@@ -55,14 +55,7 @@ Route::group(['namespace'=>"Temporary","middleware" => "csrf"],function () {
     Route::put('/temporary/questionnaire/{id}',"OfficialdataController@update");
     Route::delete('/temporary/questionnaire/{id}',"OfficialdataController@destroy");
     Route::post('/test',"TestController@store");
+    Route::get('/student', "TestController@index");
 });
-
-
-
 
 Route::any('/wechat', 'WechatController@serve');
-
-Route::get('/{vue_capture?}', function () {
-    return view('example');
-});
-

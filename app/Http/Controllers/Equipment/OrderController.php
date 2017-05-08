@@ -113,14 +113,25 @@ class OrderController extends Controller
         return $this->order->pendingOrder($repaire_id);
     }
 
+    /*
+     * 处理中工单列表
+     */
     public function handingOrderList(){
         $repaire_id = User::where('user_id',$_SERVER['HTTP_AUTHORIZATION'])->value('repaire_id');
         return $this->order->handingOrder($repaire_id);
     }
+
+    /*
+     * 已完成工单列表
+     */
     public function completeOrderList(){
         $repaire_id = User::where('user_id',$_SERVER['HTTP_AUTHORIZATION'])->value('repaire_id');
         return $this->order->completeOrder($repaire_id);
     }
+
+    /*
+     * 已评价工单列表
+     */
     public function evaluatedOrderList(){
         $repaire_id = User::where('user_id',$_SERVER['HTTP_AUTHORIZATION'])->value('repaire_id');
         return $this->order->evaluatedOrder($repaire_id);
@@ -134,7 +145,6 @@ class OrderController extends Controller
         $input = $request->all();
         $validator = Validator::make($input, [
             'order_id' => 'required',
-//            'repaire_id' => 'required',
             'place' => 'required'
         ]);
 
@@ -286,16 +296,16 @@ class OrderController extends Controller
 
         $money = DB::table('app_jiaozhuang_repaire_project')->where('repaire_id',$input['repaire_id'])->value('money');
         $num = DB::table('app_jiaozhuang_repaire_place')->where('order_id',$input['order_id'])->count();
-        DB::beginTransaction();
-        $res1 = Order::where('order_id',$input['order_id'])->where('is_visit',1)
+//        DB::beginTransaction();
+        $res = Order::where('order_id', $input['order_id'])->where('is_visit', 1)
             ->update(['state'=>3,'create_time'=>Carbon::now(),'total_money'=>$money*$num]);
-        $res2 = $this->order->addSchedules('待评价',$input['place'],$_SERVER['HTTP_AUTHORIZATION'],$input['repaire_id'],$input['order_id'],Carbon::now(),2);
+//        $res2 = $this->order->addSchedules('待评价',$input['place'],$_SERVER['HTTP_AUTHORIZATION'],$input['repaire_id'],$input['order_id'],Carbon::now(),2);
 
-        if($res1 && $res2){
-            DB::commit();
+        if ($res) {
+//            DB::commit();
             return array('status'=>1);
         }else{
-            DB::rollback();
+//            DB::rollback();
             return array('status'=>0,'errmsg'=>'确认完成失败!');
         }
     }
@@ -309,6 +319,11 @@ class OrderController extends Controller
         return $this->order->allOrders($repaire_id);
     }
 
+    /**
+     * 评价工单
+     * @param Request $request
+     * @return array
+     */
     public function evaluate(Request $request){
         $input = $request->all();
         $validator = Validator::make($input, [
@@ -322,20 +337,16 @@ class OrderController extends Controller
         }
         if($data = Order::where('order_id',$input['order_id'])->where('creator_id',$_SERVER['HTTP_AUTHORIZATION'])->where('state',3)->first()){
             $now = Carbon::now();
-            DB::beginTransaction();
-            $res1 = Order::where('order_id',$input['order_id'])->where('creator_id',$_SERVER['HTTP_AUTHORIZATION'])->update([
+            $res = Order::where('order_id', $input['order_id'])->where('creator_id', $_SERVER['HTTP_AUTHORIZATION'])->update([
                 'eval_level'=>$input['eval_level'],
                 'eval_content'=>$input['eval_content'],
                 'state'=>4,
                 'create_time'=>$now,
                 'finish_time'=>$now
             ]);
-            $res2 = $this->order->addSchedules('已评价',$input['place'],$_SERVER['HTTP_AUTHORIZATION'],$data->repaire_id,$input['order_id'],Carbon::now(),2);
-            if($res1 && $res2){
-                DB::commit();
+            if ($res) {
                 return array('status'=>1);
             }else{
-                DB::rollback();
                 return array('status'=>0,'errmsg'=>'评价失败,请重试');
             }
         }else{

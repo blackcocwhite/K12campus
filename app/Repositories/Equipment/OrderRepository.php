@@ -26,7 +26,7 @@ class OrderRepository
      */
     public function forOrderId($order_id)
     {
-        $data = ['order_id','state','create_time','order_desc','creator_id','place','user_name','mobile','org_name','channel_id','repaire_time','is_point','is_visit','receive_status'];
+        $data = ['order_id', 'state', 'create_time', 'order_desc', 'creator_id', 'place', 'user_name', 'mobile', 'org_name', 'channel_id', 'repaire_time', 'is_point', 'is_visit', 'receive_status', 'eval_level', 'eval_content'];
         return Order::where('order_id', $order_id)
             ->select($data)
             ->with('images', 'places')

@@ -32,7 +32,11 @@ class TestController extends Controller
      */
     public function index()
     {
-        //
+        $_list = Predis::keys('student:*');
+        foreach ($_list as $item) {
+            $data[] = Predis::hgetall($item);
+        }
+        dd($data);
     }
 
     /**
