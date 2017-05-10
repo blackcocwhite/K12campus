@@ -44,6 +44,18 @@ Route::group(['prefix'=>'v1'], function () {
         Route::post('/confirmComplete',"OrderController@confirmComplete");
         Route::get('/allOrders',"OrderController@allOrders");
     });
+
+    /****校园安全系统----家长端****/
+    Route::group(['namespace' => 'Wristband', 'middleware' => 'wechat.user'], function () {
+        Route::post('/notifyList', "WristbandController@notifyList");
+        Route::post('/leaveListForParent', "WristbandController@leaveListForParent");
+        Route::get('/hasStudent/{channelId}', "WristbandController@hasStudent");
+        Route::post('/askLeave', "WristbandController@askLeave");
+        Route::post('/leaveListForTeacher', "WristbandController@leaveListForTeacher");
+        Route::get('/leaveInfo/{leaveId}', "WristbandController@leaveInfo");
+        Route::post('/admitLeave', "WristbandController@admitLeave");
+        Route::post('/attendance', "WristbandController@attendance");
+    });
 });
 
 Route::post('/upload',"UploadController@index");
