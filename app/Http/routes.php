@@ -71,3 +71,10 @@ Route::group(['namespace'=>"Temporary","middleware" => "csrf"],function () {
 });
 
 Route::any('/wechat', 'WechatController@serve');
+
+Route::group(['middleware' => 'wechat.oauth'], function () {
+    Route::get('/abctest', function () {
+        $user = session('wechat.oauth_user');
+        dd($user);
+    });
+});
