@@ -22,6 +22,15 @@ class WristbandController extends Controller
     public function notifyList(Request $request)
     {
         $input = $request->all();
+        $validator = Validator::make($input, [
+            'channel_id' => 'required',
+//            'start_time' => 'required',
+//            'end_time' => 'required'
+        ]);
+        if ($validator->fails()) {
+            return array('status' => 0, 'errmsg' => '缺失参数!');
+        }
+
         $_c = Predis::smembers("userType:$input[channel_id]:$_SERVER[HTTP_AUTHORIZATION]");
         $student_id = [];
         foreach ($_c as $item) {
@@ -30,13 +39,14 @@ class WristbandController extends Controller
                 $student_id[] = Predis::hget("group.member:$list[0]:$_SERVER[HTTP_AUTHORIZATION]", "studentId");
             }
         }
-
+        if (empty($student_id)) return array('status' => 0, 'errmsg' => "没有数据");
         $da_id = Student::whereIn('student_id', $student_id)->lists('da_id');
         $result = DB::table('app_shouhuan_data')->
         leftJoin('app_shouhuan_da_student', 'app_shouhuan_data.da_id', '=', 'app_shouhuan_da_student.da_id')
             ->whereIn('app_shouhuan_data.da_id', $da_id)
             ->select('app_shouhuan_data.flag', 'create_time', 'student_id', 'app_shouhuan_data.da_id')
-            ->whereBetween('create_time', [Carbon::today()->startOfWeek()->format('Y-m-d'), Carbon::today()->endOfWeek()->format('Y-m-d')])
+//            ->whereBetween('create_time', [Carbon::today()->startOfWeek()->format('Y-m-d'), Carbon::today()->endOfWeek()->format('Y-m-d')])
+            ->whereBetween('create_time', [$input['start_time'], $input['end_time']])
             ->orderBy('create_time', 'desc')
             ->get();
         $v = [];
@@ -44,7 +54,11 @@ class WristbandController extends Controller
             $v[$key] = objectToArray($item);
             $v[$key]['studentName'] = Predis::hget("student:$input[channel_id]:" . $v[$key]['student_id'], 'studentName');
         }
-        return $v;
+        if ($v) {
+            return $v;
+        } else {
+            return array('status' => 0, 'errmsg' => '没有数据');
+        }
     }
 
     /**
@@ -55,6 +69,14 @@ class WristbandController extends Controller
     public function leaveListForParent(Request $request)
     {
         $input = $request->all();
+        $validator = Validator::make($input, [
+            'channel_id' => 'required',
+//            'start_time' => 'required',
+//            'end_time' => 'required'
+        ]);
+        if ($validator->fails()) {
+            return array('status' => 0, 'errmsg' => '缺失参数!');
+        }
         $_c = Predis::smembers("userType:$input[channel_id]:$_SERVER[HTTP_AUTHORIZATION]");
         $student_id = [];
         foreach ($_c as $item) {
@@ -66,15 +88,18 @@ class WristbandController extends Controller
 
         $result = DB::table('app_shouhuan_leave')
             ->whereIn('student_id', $student_id)
-            ->select('student_id', 'start_time', 'end_time', 'check_status')
+            ->select('student_id', 'start_time', 'end_time', 'check_status', 'create_time', 'group_id')
             ->orderBy('create_time', 'desc')
             ->get();
 
-        $v = [];
+        $data = [];
         foreach ($result as $key => $item) {
-            $v[$key] = objectToArray($item);
-            $v[$key]['studentName'] = Predis::hget("student:$input[channel_id]:" . $v[$key]['student_id'], 'studentName');
+            $data[$key] = objectToArray($item);
+            $data[$key]['studentName'] = Predis::hget("student:$input[channel_id]:" . $data[$key]['student_id'], 'studentName');
+            $data[$key]['groupName'] = Predis::hget("group:" . $data[$key]['group_id'], 'groupName');
         }
+        $v['data'] = $data;
+        $v['today'] = Carbon::today();
         return $v;
     }
 
@@ -147,6 +172,14 @@ class WristbandController extends Controller
     public function leaveListForTeacher(Request $request)
     {
         $input = $request->all();
+        $validator = Validator::make($input, [
+            'channel_id' => 'required',
+            'start_time' => 'required',
+            'end_time' => 'required'
+        ]);
+        if ($validator->fails()) {
+            return array('status' => 0, 'errmsg' => '缺失参数!');
+        }
         $_c = Predis::smembers("userType:$input[channel_id]:$_SERVER[HTTP_AUTHORIZATION]");
         if (empty($_c)) {
             return array('status' => 0, 'errmsg' => '没有数据');
@@ -161,15 +194,20 @@ class WristbandController extends Controller
         }
         if (empty($group_list)) return array('status' => 0, 'errmsg' => '您没有权限');
         DB::setFetchMode(\PDO::FETCH_ASSOC);
-        $res = DB::table('app_shouhuan_leave')->whereIn('group_id', $group_list)->select('leave_id', 'student_id', 'start_time', 'end_time', 'check_status', 'group_id')->get();
+        $res = DB::table('app_shouhuan_leave')
+            ->whereIn('group_id', $group_list)
+            ->whereBetween('create_time', [$input['start_time'], $input['end_time']])
+            ->select('leave_id', 'student_id', 'start_time', 'end_time', 'check_status', 'group_id', 'create_time')
+            ->get();
         $result = [];
         foreach ($res as $key => $value) {
             $result[$key] = $value;
             $result[$key]['studentName'] = Predis::hget("student:$input[channel_id]:" . $value['student_id'], 'studentName');
             $result[$key]['groupName'] = Predis::hget("group:$value[group_id]", "groupName");
         }
-
-        return $result;
+        $data['data'] = $result;
+        $data['now'] = Carbon::today();
+        return $data;
     }
 
     /**
@@ -228,7 +266,16 @@ class WristbandController extends Controller
 
     public function attendance(Request $request)
     {
+        $input = $request->all();
         $channel_id = $request->input('channel_id');
+        $validator = Validator::make($input, [
+            'channel_id' => 'required',
+            'start_time' => 'required',
+            'end_time' => 'required'
+        ]);
+        if ($validator->fails()) {
+            return array('status' => 0, 'errmsg' => '缺失参数!');
+        }
         $_c = Predis::smembers("userType:$channel_id:$_SERVER[HTTP_AUTHORIZATION]");
         if (empty($_c)) {
             return array('status' => 0, 'errmsg' => '没有数据');
@@ -251,9 +298,8 @@ class WristbandController extends Controller
 
         $start_time = $request->has('end_time') ? $request->input('start_time') : Carbon::today();
         $end_time = $request->has('end_time') ? $request->input('end_time') : Carbon::tomorrow();
-
-        $total_student = Predis::hlen("group.student:$group_id");
-        $student_list = Predis::hvals("group.student:$group_id");
+        $total_student = Predis::hlen("group.student:$group_id[groupId]");
+        $student_list = Predis::hvals("group.student:$group_id[groupId]");
         $da_id = Student::whereIn('student_id', $student_list)->lists('da_id');
         $late = DB::table('app_shouhuan_data')
             ->whereIn('da_id', $da_id)
@@ -266,12 +312,103 @@ class WristbandController extends Controller
             ->whereBetween('create_time', [$start_time, $end_time])
             ->count();
         $data = array(
+            'total' => $total_student,
             'normal' => $total_student - $late,
             'late' => $late,
             'early' => $early,
-            'groupName' => Predis::hget("group:$group_id", "groupName"),
+            'groupName' => Predis::hget("group:$group_id[groupId]", "groupName"),
             'groupList' => $group_list
         );
         return $data;
+    }
+
+    public function groupInfo(Request $request)
+    {
+        $input = $request->all();
+        $channel_id = $request->input('channel_id');
+        $validator = Validator::make($input, [
+            'channel_id' => 'required',
+            'start_time' => 'required',
+            'end_time' => 'required',
+            'type' => 'required'
+        ]);
+        if ($validator->fails()) {
+            return array('status' => 0, 'errmsg' => '缺失参数!');
+        }
+        $_c = Predis::smembers("userType:$channel_id:$_SERVER[HTTP_AUTHORIZATION]");
+        if (empty($_c)) {
+            return array('status' => 0, 'errmsg' => '没有数据');
+        }
+        $group_list = [];
+        foreach ($_c as $key => $item) {
+            $list = explode(':', $item);
+            if ($list[1] == 2 || $list[1] == 3) {
+                $group_list[$key]['groupId'] = $list[0];
+                $group_list[$key]['groupName'] = Predis::hget("group:$list[0]", "groupName");
+            }
+            sort($group_list);
+        }
+        if ($request->has('group_id')) {
+            $group_id = $request->input('group_id');
+        } else {
+            $group_id = $group_list[0];
+        }
+        $student_list = Predis::hvals("group.student:$group_id[groupId]");
+        $da_id = Student::whereIn('student_id', $student_list)->lists('da_id');
+        if ($input['type'] == 3) {
+            DB::setFetchMode(\PDO::FETCH_ASSOC);
+            $res = DB::table('app_shouhuan_leave')
+                ->where('group_id', $group_id['groupId'])
+                ->whereBetween('create_time', [$input['start_time'], $input['end_time']])
+                ->select('leave_id', 'student_id', 'start_time', 'end_time', 'check_status', 'group_id', 'create_time')
+                ->get();
+            $result = [];
+            foreach ($res as $key => $value) {
+                $result[$key] = $value;
+                $result[$key]['studentName'] = Predis::hget("student:$input[channel_id]:" . $value['student_id'], 'studentName');
+                $result[$key]['groupName'] = Predis::hget("group:$value[group_id]", "groupName");
+            }
+
+            if ($result) {
+                $data['data'] = $result;
+                $data['now'] = Carbon::today();
+                return $data;
+            } else {
+                return array('status' => 0, 'errmsg' => '没有数据');
+            }
+        } else {
+            $result = DB::table('app_shouhuan_data')->
+            leftJoin('app_shouhuan_da_student', 'app_shouhuan_data.da_id', '=', 'app_shouhuan_da_student.da_id')
+                ->whereIn('app_shouhuan_data.da_id', $da_id)
+                ->select('app_shouhuan_data.flag', 'create_time', 'student_id', 'app_shouhuan_data.da_id')
+                ->whereBetween('create_time', [$input['start_time'], $input['end_time']])
+                ->where('app_shouhuan_data.flag', $input['type'])
+                ->orderBy('create_time', 'desc')
+                ->get();
+
+            $v = [];
+            foreach ($result as $key => $item) {
+                $v[$key] = objectToArray($item);
+                $v[$key]['studentName'] = Predis::hget("student:$input[channel_id]:" . $v[$key]['student_id'], 'studentName');
+            }
+
+            if ($v) {
+                $data['data'] = $v;
+                $data['now'] = Carbon::today();
+                return $data;
+            } else {
+                return array('status' => 0, 'errmsg' => '没有数据');
+            }
+        }
+
+    }
+
+    public function channel_term_info($channel_id)
+    {
+        $res = DB::table('app_school_time_desc')
+            ->select('sbn_start_time', 'sbn_end_time', 'xbn_start_time', 'xbn_end_time')
+            ->where('channel_id', $channel_id)
+            ->first();
+        return response()->json($res);
     }
 }

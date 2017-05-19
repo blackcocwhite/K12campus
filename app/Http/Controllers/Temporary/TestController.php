@@ -6,24 +6,13 @@ use Illuminate\Http\Request;
 
 use App\Http\Requests;
 use App\Http\Controllers\Controller;
-use App\Model\Temporary\Test;
+use App\Model\Temporary\Todo;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
-use Uuid;
-use Predis;
 
 class TestController extends Controller
 {
     protected $fields = [
-//        'oa' => '',
-//        'index' => '',
-//        'time' => '',
-        'da' => '',
-        'rssi' => '',
-        'us' => '',
-        'step' => '',
-        'mfd' => '',
-//        'create_time' =>  '',
     ];
     /**
      * Display a listing of the resource.
@@ -32,11 +21,7 @@ class TestController extends Controller
      */
     public function index()
     {
-        $_list = Predis::keys('student:*');
-        foreach ($_list as $item) {
-            $data[] = Predis::hgetall($item);
-        }
-        dd($data);
+        return response()->json(Todo::all());
     }
 
     /**
@@ -57,47 +42,6 @@ class TestController extends Controller
      */
     public function store(Request $request)
     {
-//        $ds_list = $request->get('ds');
-//        $now = Carbon::now();
-//        $data = json_encode($request->all());
-//        Log::info($data);
-//        die;
-//        foreach ($ds_list as $item) {
-//
-//            if(Predis::hsetnx("mac:$item[da]",$request->get('oa'),1)){
-//                foreach (array_keys($this->fields) as $field) {
-//                    $data['data_'.$field] = $item[$field];
-//                }
-//                $uuid = Uuid::generate(1);
-//                $data['data_id'] = $uuid->string;
-//                $data['data_oa'] = $request->get('oa');
-//                $data['data_index'] = $request->get('index');
-//                $data['createdAt'] = $now;
-//                $data['updatedAt'] = $now;
-//                $data['create_time'] = $now;
-//                $data['data_time'] = $request->get('time');
-//                Test::create($data);
-//                Predis::expire("mac:$item[da]",'300');
-//            }
-
-//        }
-        return array('status'=>1);
-//        if(Predis::hsetnx("mac:$da",$request->get('oa'),1)){
-//            foreach (array_keys($this->fields) as $field) {
-//                $data['data_'.$field] = $request->get($field);
-//            }
-//
-//            $data['createdAt'] = $now;
-//            $data['updatedAt'] = $now;
-//            $data['create_time'] = $now;
-//            Test::create($data);
-//            Predis::expire("mac:$da",'300');
-//            return array('status'=>1);
-//        }else{
-//            return array('status'=>0);
-//        }
-
-
     }
 
     /**

@@ -46,7 +46,7 @@ Route::group(['prefix'=>'v1'], function () {
     });
 
     /****校园安全系统----家长端****/
-    Route::group(['namespace' => 'Wristband', 'middleware' => 'wechat.user'], function () {
+    Route::group(['namespace' => 'Wristband', 'prefix' => 'wristband', 'middleware' => 'wechat.user'], function () {
         Route::post('/notifyList', "WristbandController@notifyList");
         Route::post('/leaveListForParent', "WristbandController@leaveListForParent");
         Route::get('/hasStudent/{channelId}', "WristbandController@hasStudent");
@@ -55,6 +55,8 @@ Route::group(['prefix'=>'v1'], function () {
         Route::get('/leaveInfo/{leaveId}', "WristbandController@leaveInfo");
         Route::post('/admitLeave', "WristbandController@admitLeave");
         Route::post('/attendance', "WristbandController@attendance");
+        Route::post('/groupInfo', 'WristbandController@groupInfo');
+        Route::get('/channel_term_info/{channle_id}', "WristbandController@channel_term_info");
     });
 });
 
@@ -66,8 +68,8 @@ Route::group(['namespace'=>"Temporary","middleware" => "csrf"],function () {
     Route::get('/temporary/questionnaire/{id}/show',"OfficialdataController@show");
     Route::put('/temporary/questionnaire/{id}',"OfficialdataController@update");
     Route::delete('/temporary/questionnaire/{id}',"OfficialdataController@destroy");
-    Route::post('/test',"TestController@store");
-    Route::get('/student', "TestController@index");
+    Route::get('/list', "TestController@index");
+//    Route::get('/student', "TestController@index");
 });
 
 Route::any('/wechat', 'WechatController@serve');

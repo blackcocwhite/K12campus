@@ -156,6 +156,9 @@ return [
 
         // Other service providers...
         Overtrue\LaravelFilesystem\Qiniu\QiniuStorageServiceProvider::class,
+
+        /*cors*/
+        Barryvdh\Cors\ServiceProvider::class,
     ],
 
     /*

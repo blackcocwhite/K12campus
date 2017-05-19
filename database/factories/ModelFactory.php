@@ -35,3 +35,9 @@ $factory->define(App\Model\Eequipment\Order::class, function ($faker) {
         'order_flag'=>1
     ];
 });
+$factory->define(App\Model\Temporary\Todo::class, function ($faker) {
+    return [
+        'title' => join("\n\n", $faker->sentences(1)),
+        'completed' => 0
+    ];
+});
