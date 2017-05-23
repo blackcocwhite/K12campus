@@ -305,7 +305,7 @@ class WristbandController extends Controller
             }
             sort($group_list);
         }
-
+        if (empty($group_list)) return array('status' => 0, 'errmsg' => '您没有权限');
         if ($request->has('group_id')) {
             $group_id = $request->input('group_id');
         } else {
@@ -316,7 +316,7 @@ class WristbandController extends Controller
         $end_time = $request->has('end_time') ? $request->input('end_time') : Carbon::tomorrow();
         $total_student = Predis::hlen("group.student:$group_id[groupId]");
         $student_list = Predis::hvals("group.student:$group_id[groupId]");
-        $da_id = Student::whereIn('student_id', $student_list)->lists('da_id');
+        $da_id = Student::whereIn('student_id', $student_list)->pluck('da_id');
         $late = DB::table('app_shouhuan_data')
             ->whereIn('da_id', $da_id)
             ->where('flag', 0)
@@ -365,13 +365,14 @@ class WristbandController extends Controller
             }
             sort($group_list);
         }
+        if (empty($group_list)) return array('status' => 0, 'errmsg' => '您没有权限');
         if ($request->has('group_id')) {
             $group_id = $request->input('group_id');
         } else {
             $group_id = $group_list[0];
         }
         $student_list = Predis::hvals("group.student:$group_id[groupId]");
-        $da_id = Student::whereIn('student_id', $student_list)->lists('da_id');
+        $da_id = Student::whereIn('student_id', $student_list)->pluck('da_id');
         if ($input['type'] == 3) {
             DB::setFetchMode(\PDO::FETCH_ASSOC);
             $res = DB::table('app_shouhuan_leave')
@@ -394,6 +395,7 @@ class WristbandController extends Controller
                 return array('status' => 0, 'errmsg' => '没有数据');
             }
         } else {
+            DB::setFetchMode(\PDO::FETCH_ASSOC);
             $result = DB::table('app_shouhuan_data')->
             leftJoin('app_shouhuan_da_student', 'app_shouhuan_data.da_id', '=', 'app_shouhuan_da_student.da_id')
                 ->whereIn('app_shouhuan_data.da_id', $da_id)
@@ -402,11 +404,10 @@ class WristbandController extends Controller
                 ->where('app_shouhuan_data.flag', $input['type'])
                 ->orderBy('create_time', 'desc')
                 ->get();
-
             $v = [];
             foreach ($result as $key => $item) {
-                $v[$key] = objectToArray($item);
-                $v[$key]['studentName'] = Predis::hget("student:$input[channel_id]:" . $v[$key]['student_id'], 'studentName');
+                $v[$key] = $item;
+                $v[$key]['studentName'] = Predis::hget("student:$input[channel_id]:" . $item['student_id'], 'studentName');
             }
 
             if ($v) {
