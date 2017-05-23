@@ -60,8 +60,10 @@ Route::group(['prefix'=>'v1'], function () {
     });
 });
 
+/*上传图片*/
 Route::post('/upload',"UploadController@index");
-Route::post('/postData',"OfficialdataController@store");
+/*验证短信验证码*/
+Route::post('/validateCode', "SmsController@validateCode");
 
 Route::group(['namespace'=>"Temporary","middleware" => "csrf"],function () {
     Route::get('/temporary/questionnaire/index',"OfficialdataController@index");

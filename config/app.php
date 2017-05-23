@@ -145,8 +145,6 @@ return [
         App\Providers\EventServiceProvider::class,
         App\Providers\RouteServiceProvider::class,
 
-        /* dingo */
-//        Dingo\Api\Provider\LaravelServiceProvider::class,
 
         /*idehelper*/
         Barryvdh\LaravelIdeHelper\IdeHelperServiceProvider::class,
@@ -159,6 +157,10 @@ return [
 
         /*cors*/
         Barryvdh\Cors\ServiceProvider::class,
+
+        /*sms*/
+        Toplan\PhpSms\PhpSmsServiceProvider::class,
+        Toplan\Sms\SmsManagerServiceProvider::class,
     ],
 
     /*
@@ -212,6 +214,9 @@ return [
 
         'Uuid' => Webpatser\Uuid\Uuid::class,
         'EasyWeChat' => Overtrue\LaravelWechat\Facade::class,
+
+        'PhpSms' => Toplan\PhpSms\Facades\Sms::class,
+        'SmsManager' => Toplan\Sms\Facades\SmsManager::class,
     ],
 
 ];

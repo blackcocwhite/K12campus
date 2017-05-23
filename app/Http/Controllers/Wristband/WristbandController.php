@@ -24,8 +24,8 @@ class WristbandController extends Controller
         $input = $request->all();
         $validator = Validator::make($input, [
             'channel_id' => 'required',
-//            'start_time' => 'required',
-//            'end_time' => 'required'
+            'start_time' => 'required',
+            'end_time' => 'required'
         ]);
         if ($validator->fails()) {
             return array('status' => 0, 'errmsg' => '缺失参数!');
@@ -40,20 +40,25 @@ class WristbandController extends Controller
             }
         }
         if (empty($student_id)) return array('status' => 0, 'errmsg' => "没有数据");
-        $da_id = Student::whereIn('student_id', $student_id)->lists('da_id');
-        $result = DB::table('app_shouhuan_data')->
-        leftJoin('app_shouhuan_da_student', 'app_shouhuan_data.da_id', '=', 'app_shouhuan_da_student.da_id')
-            ->whereIn('app_shouhuan_data.da_id', $da_id)
-            ->select('app_shouhuan_data.flag', 'create_time', 'student_id', 'app_shouhuan_data.da_id')
+//        $da_id = Student::whereIn('student_id', $student_id)->lists('da_id');
+        $result = DB::table('app_shouhuan_data')
+            ->Join('app_shouhuan_da_student', 'app_shouhuan_data.da_id', '=', 'app_shouhuan_da_student.da_id')
+            ->Join('console_student', 'app_shouhuan_da_student.student_id', '=', 'console_student.student_id')
+            ->whereIn('app_shouhuan_da_student.student_id', $student_id)
+            ->select('app_shouhuan_data.flag', 'create_time', 'app_shouhuan_da_student.student_id', 'app_shouhuan_data.da_id', 'console_student.student_name as studentName')
 //            ->whereBetween('create_time', [Carbon::today()->startOfWeek()->format('Y-m-d'), Carbon::today()->endOfWeek()->format('Y-m-d')])
             ->whereBetween('create_time', [$input['start_time'], $input['end_time']])
             ->orderBy('create_time', 'desc')
             ->get();
+        return $result;
         $v = [];
         foreach ($result as $key => $item) {
-            $v[$key] = objectToArray($item);
-            $v[$key]['studentName'] = Predis::hget("student:$input[channel_id]:" . $v[$key]['student_id'], 'studentName');
+            $date = Carbon::createFromFormat('Y-m-d H:i:s', $item->create_time)->toDateString();
+            $v[$date][$key] = objectToArray($item);
+//            $v[$date][$key]['studentName'] = Predis::hget("student:$input[channel_id]:" . $item->student_id, 'studentName');
+            sort($v[$date]);
         }
+
         if ($v) {
             return $v;
         } else {
@@ -71,32 +76,39 @@ class WristbandController extends Controller
         $input = $request->all();
         $validator = Validator::make($input, [
             'channel_id' => 'required',
-//            'start_time' => 'required',
-//            'end_time' => 'required'
+            'start_time' => 'required',
+            'end_time' => 'required'
         ]);
         if ($validator->fails()) {
             return array('status' => 0, 'errmsg' => '缺失参数!');
         }
         $_c = Predis::smembers("userType:$input[channel_id]:$_SERVER[HTTP_AUTHORIZATION]");
         $student_id = [];
+        $group_id = [];
         foreach ($_c as $item) {
             $list = explode(':', $item);
             if ($list[1] == 1) {
                 $student_id[] = Predis::hget("group.member:$list[0]:$_SERVER[HTTP_AUTHORIZATION]", "studentId");
+                $group_id[] = $list[0];
             }
         }
-
+        DB::setFetchMode(\PDO::FETCH_ASSOC);
         $result = DB::table('app_shouhuan_leave')
             ->whereIn('student_id', $student_id)
             ->select('student_id', 'start_time', 'end_time', 'check_status', 'create_time', 'group_id')
             ->orderBy('create_time', 'desc')
             ->get();
-
         $data = [];
+        foreach ($student_id as $key => $sid) {
+            $student[$sid] = Predis::hget("student:$input[channel_id]:" . $sid, 'studentName');
+        }
+        foreach ($group_id as $key => $gid) {
+            $group[$gid] = Predis::hget("group:" . $gid, 'groupName');
+        }
         foreach ($result as $key => $item) {
-            $data[$key] = objectToArray($item);
-            $data[$key]['studentName'] = Predis::hget("student:$input[channel_id]:" . $data[$key]['student_id'], 'studentName');
-            $data[$key]['groupName'] = Predis::hget("group:" . $data[$key]['group_id'], 'groupName');
+            $data[$key] = $item;
+            $data[$key]['studentName'] = $student[$item['student_id']];
+            $data[$key]['groupName'] = $group[$item['group_id']];
         }
         $v['data'] = $data;
         $v['today'] = Carbon::today();
@@ -195,15 +207,19 @@ class WristbandController extends Controller
         if (empty($group_list)) return array('status' => 0, 'errmsg' => '您没有权限');
         DB::setFetchMode(\PDO::FETCH_ASSOC);
         $res = DB::table('app_shouhuan_leave')
+            ->Join('console_student', 'app_shouhuan_leave.student_id', '=', 'console_student.student_id')
             ->whereIn('group_id', $group_list)
             ->whereBetween('create_time', [$input['start_time'], $input['end_time']])
-            ->select('leave_id', 'student_id', 'start_time', 'end_time', 'check_status', 'group_id', 'create_time')
+            ->select('leave_id', 'app_shouhuan_leave.student_id', 'start_time', 'end_time', 'check_status', 'group_id', 'create_time', 'console_student.student_name AS studentName')
             ->get();
         $result = [];
+        foreach ($group_list as $gid) {
+            $group[$gid] = Predis::hget("group:" . $gid, 'groupName');
+        }
         foreach ($res as $key => $value) {
             $result[$key] = $value;
-            $result[$key]['studentName'] = Predis::hget("student:$input[channel_id]:" . $value['student_id'], 'studentName');
-            $result[$key]['groupName'] = Predis::hget("group:$value[group_id]", "groupName");
+//            $result[$key]['studentName'] = Predis::hget("student:$input[channel_id]:" . $value['student_id'], 'studentName');
+            $result[$key]['groupName'] = $group[$value['group_id']];
         }
         $data['data'] = $result;
         $data['now'] = Carbon::today();
@@ -339,6 +355,7 @@ class WristbandController extends Controller
         if (empty($_c)) {
             return array('status' => 0, 'errmsg' => '没有数据');
         }
+
         $group_list = [];
         foreach ($_c as $key => $item) {
             $list = explode(':', $item);
