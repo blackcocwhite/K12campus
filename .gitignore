@@ -7,3 +7,4 @@ Homestead.json
 /config/app.php
 .bowerrc
 .idea/watcherTasks.xml
+/.idea
