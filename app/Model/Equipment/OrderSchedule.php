@@ -8,6 +8,7 @@ class OrderSchedule extends BaseModel
     protected $primaryKey = 'schedule_id';
     protected $guarded = ['createAt','updateAt'];
     public $timestamps = false;
+    public $incrementing = false;
 
     public function order()
     {

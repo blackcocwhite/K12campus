@@ -352,8 +352,18 @@ class ModelsCommand extends Command
                         case 'integer':
                         case 'bigint':
                         case 'smallint':
-                        case 'boolean':
                             $type = 'integer';
+                            break;
+                        case 'boolean':
+                            switch (config('database.default')) {
+                                case 'sqlite':
+                                case 'mysql':
+                                    $type = 'integer';
+                                    break;
+                                default:
+                                    $type = 'boolean';
+                                    break;
+                            }
                             break;
                         case 'decimal':
                         case 'float':
@@ -731,7 +741,7 @@ class ModelsCommand extends Command
         $phpdoc = new DocBlock($reflection);
 
         if ($phpdoc->hasTag('return')) {
-            $type = $phpdoc->getTagsByName('return')[0]->getContent();
+            $type = $phpdoc->getTagsByName('return')[0]->getType();
         }
 
         return $type;

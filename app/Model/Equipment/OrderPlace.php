@@ -8,6 +8,7 @@ class OrderPlace extends Model
 {
     protected $table = 'app_jiaozhuang_repaire_place';
     protected $primaryKey = 'repaire_place_id';
+    public $incrementing = false;
 
     public function order()
     {

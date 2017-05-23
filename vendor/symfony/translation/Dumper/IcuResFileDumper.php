@@ -28,13 +28,13 @@ class IcuResFileDumper extends FileDumper
     /**
      * {@inheritdoc}
      */
-    public function format(MessageCatalogue $messages, $domain = 'messages')
+    public function formatCatalogue(MessageCatalogue $messages, $domain, array $options = array())
     {
         $data = $indexes = $resources = '';
 
         foreach ($messages->all($domain) as $source => $target) {
             $indexes .= pack('v', strlen($data) + 28);
-            $data .= $source."\0";
+            $data    .= $source."\0";
         }
 
         $data .= $this->writePadding($data);
