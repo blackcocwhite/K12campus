@@ -163,7 +163,7 @@ class OrderController extends Controller
                     'create_time'=>$now,
                     'receive_time' => $now
                 ]);
-            $res2 = $this->order->addSchedules('接单成功',$input['place'],$_SERVER['HTTP_AUTHORIZATION'],$repaire_id,$input['order_id'],$now,2);
+            $res2 = $this->order->addSchedules('接单成功',$input['place'],$_SERVER['HTTP_AUTHORIZATION'],$repaire_id,$input['order_id'],$now);
             if($res1 && $res2){
                 DB::commit();
                 return array('status'=>1);
@@ -272,7 +272,7 @@ class OrderController extends Controller
         if(!$_SERVER['HTTP_AUTHORIZATION'] == Order::where('order_id',$input['order_id'])->value('receive_user_id')) {
             return array('status' => 0, 'errmsg' => '工单号与用户不匹配,添加进度失败');
         }
-        if ($this->order->addSchedules($input['schedule_name'], $input['place'], $_SERVER['HTTP_AUTHORIZATION'], $input['repaire_id'], $input['order_id'], Carbon::now(), 2)) {
+        if ($this->order->addSchedules($input['schedule_name'], $input['place'], $_SERVER['HTTP_AUTHORIZATION'], $input['repaire_id'], $input['order_id'], Carbon::now())) {
             return array('status' => 1);
         }else{
             return array('status' => 0, 'errmsg' => '添加进度失败,请重试');

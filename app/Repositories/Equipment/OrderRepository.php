@@ -118,7 +118,7 @@ class OrderRepository
         return $res;
     }
 
-    public function addSchedules($desc,$place,$user_id,$repaire_id,$order_id,$time,$status){
+    public function addSchedules($desc,$place,$user_id,$repaire_id,$order_id,$time,$status=-1){
         $uuid = Uuid::generate(1);
         $_data = array(
             'order_id' => $order_id,

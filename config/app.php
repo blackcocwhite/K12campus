@@ -147,7 +147,7 @@ return [
 
 
         /*idehelper*/
-        Barryvdh\LaravelIdeHelper\IdeHelperServiceProvider::class,
+//        Barryvdh\LaravelIdeHelper\IdeHelperServiceProvider::class,
 
         /*EasyWeChat*/
         Overtrue\LaravelWechat\ServiceProvider::class,
@@ -161,6 +161,9 @@ return [
         /*sms*/
         Toplan\PhpSms\PhpSmsServiceProvider::class,
         Toplan\Sms\SmsManagerServiceProvider::class,
+
+        /*debugbar*/
+//        Barryvdh\Debugbar\ServiceProvider::class,
     ],
 
     /*
@@ -209,14 +212,13 @@ return [
         'Validator' => Illuminate\Support\Facades\Validator::class,
         'View'      => Illuminate\Support\Facades\View::class,
 
-//        'Api'       => Dingo\Api\Facade\API::class,
-//        'ApiRoute'  => Dingo\Api\Facade\Route::class,
-
         'Uuid' => Webpatser\Uuid\Uuid::class,
         'EasyWeChat' => Overtrue\LaravelWechat\Facade::class,
 
         'PhpSms' => Toplan\PhpSms\Facades\Sms::class,
         'SmsManager' => Toplan\Sms\Facades\SmsManager::class,
+
+        'Debugbar' => Barryvdh\Debugbar\Facade::class,
     ],
 
 ];
