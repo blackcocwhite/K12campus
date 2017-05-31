@@ -9,6 +9,9 @@
 | and give it the controller to call when that URI is requested.
 |
 */
+Route::any('/',function(){
+    return view('welcome');
+});
 Route::group(['prefix'=>'v1'], function () {
     /****系统注册****/
     Route::get('/checkUser/{openid}',"UserController@login");

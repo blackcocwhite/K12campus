@@ -76,6 +76,12 @@ class UserRepository
         return Predis::hgetall("_uid($openid)");
     }
 
+    /**
+     * 修改用户信息
+     * @param $openid
+     * @param $type
+     * @param $data
+     */
     public function _modifyUser($openid,$type,$data)
     {
         if($user_id = Predis::hget("wechat.user:$openid",'userId')){
