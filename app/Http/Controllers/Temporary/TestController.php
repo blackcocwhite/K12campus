@@ -3,12 +3,8 @@
 namespace App\Http\Controllers\Temporary;
 
 use Illuminate\Http\Request;
-
-use App\Http\Requests;
 use App\Http\Controllers\Controller;
 use App\Model\Temporary\Todo;
-use Carbon\Carbon;
-use Illuminate\Support\Facades\Log;
 
 class TestController extends Controller
 {

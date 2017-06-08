@@ -4,8 +4,6 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 Use Storage;
-use App\Http\Requests;
-use App\Http\Controllers\Controller;
 use Uuid;
 
 class UploadController extends Controller

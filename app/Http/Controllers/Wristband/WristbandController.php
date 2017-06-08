@@ -2,11 +2,11 @@
 
 namespace App\Http\Controllers\Wristband;
 
+use App\Repositories\Wristband\InformRepository;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
-use App\Http\Requests;
 use App\Http\Controllers\Controller;
-use Predis;
+use Redis;
 use DB;
 use App\Model\Wristband\Student;
 use Uuid;
@@ -14,6 +14,12 @@ use Validator;
 
 class WristbandController extends Controller
 {
+    private $inform;
+    public function __construct(InformRepository $inform)
+    {
+        $this->inform = $inform;
+    }
+
     /**
      * 家长端到校通知列表
      * @param Request $request
@@ -30,40 +36,7 @@ class WristbandController extends Controller
         if ($validator->fails()) {
             return array('status' => 0, 'errmsg' => '缺失参数!');
         }
-
-        $_c = Predis::smembers("userType:$input[channel_id]:$_SERVER[HTTP_AUTHORIZATION]");
-        $student_id = [];
-        foreach ($_c as $item) {
-            $list = explode(':', $item);
-            if ($list[1] == 1) {
-                $student_id[] = Predis::hget("group.member:$list[0]:$_SERVER[HTTP_AUTHORIZATION]", "studentId");
-            }
-        }
-        if (empty($student_id)) return array('status' => 0, 'errmsg' => "没有数据");
-//        $da_id = Student::whereIn('student_id', $student_id)->lists('da_id');
-        $result = DB::table('app_shouhuan_data')
-            ->Join('app_shouhuan_da_student', 'app_shouhuan_data.da_id', '=', 'app_shouhuan_da_student.da_id')
-            ->Join('console_student', 'app_shouhuan_da_student.student_id', '=', 'console_student.student_id')
-            ->whereIn('app_shouhuan_da_student.student_id', $student_id)
-            ->select('app_shouhuan_data.flag', 'create_time', 'app_shouhuan_da_student.student_id', 'app_shouhuan_data.da_id', 'console_student.student_name as studentName')
-//            ->whereBetween('create_time', [Carbon::today()->startOfWeek()->format('Y-m-d'), Carbon::today()->endOfWeek()->format('Y-m-d')])
-            ->whereBetween('create_time', [$input['start_time'], $input['end_time']])
-            ->orderBy('create_time', 'desc')
-            ->get();
-        return $result;
-        $v = [];
-        foreach ($result as $key => $item) {
-            $date = Carbon::createFromFormat('Y-m-d H:i:s', $item->create_time)->toDateString();
-            $v[$date][$key] = objectToArray($item);
-//            $v[$date][$key]['studentName'] = Predis::hget("student:$input[channel_id]:" . $item->student_id, 'studentName');
-            sort($v[$date]);
-        }
-
-        if ($v) {
-            return $v;
-        } else {
-            return array('status' => 0, 'errmsg' => '没有数据');
-        }
+        return $this->inform->listForNotify($input['channel_id'],$input['start_time'],$input['end_time']);
     }
 
     /**
@@ -82,13 +55,13 @@ class WristbandController extends Controller
         if ($validator->fails()) {
             return array('status' => 0, 'errmsg' => '缺失参数!');
         }
-        $_c = Predis::smembers("userType:$input[channel_id]:$_SERVER[HTTP_AUTHORIZATION]");
+        $_c = Redis::smembers("userType:$input[channel_id]:$_SERVER[HTTP_AUTHORIZATION]");
         $student_id = [];
         $group_id = [];
         foreach ($_c as $item) {
             $list = explode(':', $item);
             if ($list[1] == 1) {
-                $student_id[] = Predis::hget("group.member:$list[0]:$_SERVER[HTTP_AUTHORIZATION]", "studentId");
+                $student_id[] = Redis::hget("group.member:$list[0]:$_SERVER[HTTP_AUTHORIZATION]", "studentId");
                 $group_id[] = $list[0];
             }
         }
@@ -100,10 +73,10 @@ class WristbandController extends Controller
             ->get();
         $data = [];
         foreach ($student_id as $key => $sid) {
-            $student[$sid] = Predis::hget("student:$input[channel_id]:" . $sid, 'studentName');
+            $student[$sid] = Redis::hget("student:$input[channel_id]:" . $sid, 'studentName');
         }
         foreach ($group_id as $key => $gid) {
-            $group[$gid] = Predis::hget("group:" . $gid, 'groupName');
+            $group[$gid] = Redis::hget("group:" . $gid, 'groupName');
         }
         foreach ($result as $key => $item) {
             $data[$key] = $item;
@@ -159,7 +132,7 @@ class WristbandController extends Controller
      */
     public function hasStudent($channel_id)
     {
-        $_c = Predis::smembers("userType:$channel_id:$_SERVER[HTTP_AUTHORIZATION]");
+        $_c = Redis::smembers("userType:$channel_id:$_SERVER[HTTP_AUTHORIZATION]");
         if (empty($_c)) {
             return array('status' => 0, 'errmsg' => '没有数据');
         }
@@ -168,8 +141,8 @@ class WristbandController extends Controller
             $list = explode(':', $item);
             if ($list[1] == 1) {
                 $student_id[$key]['group_id'] = $list[0];
-                $student_id[$key]['student_id'] = Predis::hget("group.member:$list[0]:$_SERVER[HTTP_AUTHORIZATION]", "studentId");
-                $student_id[$key]['studentName'] = Predis::hget("student:$channel_id:" . $student_id[$key]['student_id'], 'studentName');
+                $student_id[$key]['student_id'] = Redis::hget("group.member:$list[0]:$_SERVER[HTTP_AUTHORIZATION]", "studentId");
+                $student_id[$key]['studentName'] = Redis::hget("student:$channel_id:" . $student_id[$key]['student_id'], 'studentName');
             }
             sort($student_id);
         }
@@ -192,7 +165,7 @@ class WristbandController extends Controller
         if ($validator->fails()) {
             return array('status' => 0, 'errmsg' => '缺失参数!');
         }
-        $_c = Predis::smembers("userType:$input[channel_id]:$_SERVER[HTTP_AUTHORIZATION]");
+        $_c = Redis::smembers("userType:$input[channel_id]:$_SERVER[HTTP_AUTHORIZATION]");
         if (empty($_c)) {
             return array('status' => 0, 'errmsg' => '没有数据');
         }
@@ -214,11 +187,11 @@ class WristbandController extends Controller
             ->get();
         $result = [];
         foreach ($group_list as $gid) {
-            $group[$gid] = Predis::hget("group:" . $gid, 'groupName');
+            $group[$gid] = Redis::hget("group:" . $gid, 'groupName');
         }
         foreach ($res as $key => $value) {
             $result[$key] = $value;
-//            $result[$key]['studentName'] = Predis::hget("student:$input[channel_id]:" . $value['student_id'], 'studentName');
+//            $result[$key]['studentName'] = Redis::hget("student:$input[channel_id]:" . $value['student_id'], 'studentName');
             $result[$key]['groupName'] = $group[$value['group_id']];
         }
         $data['data'] = $result;
@@ -236,9 +209,9 @@ class WristbandController extends Controller
         DB::setFetchMode(\PDO::FETCH_ASSOC);
         $res = DB::table('app_shouhuan_leave')->where('leave_id', $leave_id)->first();
         if (!$res) return array('status' => 0, 'errmsg' => '没有数据！');
-        $res['studentName'] = Predis::hget("group.member:$res[group_id]:$res[user_id]", 'studentName');
-        $res['groupName'] = Predis::hget("group:$res[group_id]", "groupName");
-        $res['relation'] = Predis::hget("parent.student:$res[user_id]:$res[student_id]", "relation");
+        $res['studentName'] = Redis::hget("group.member:$res[group_id]:$res[user_id]", 'studentName');
+        $res['groupName'] = Redis::hget("group:$res[group_id]", "groupName");
+        $res['relation'] = Redis::hget("parent.student:$res[user_id]:$res[student_id]", "relation");
         return $res;
     }
 
@@ -258,7 +231,7 @@ class WristbandController extends Controller
         if ($validator->fails()) {
             return array('status' => 0, 'errmsg' => '缺失参数!');
         }
-        $_c = Predis::smembers("userType:$input[channel_id]:$_SERVER[HTTP_AUTHORIZATION]");
+        $_c = Redis::smembers("userType:$input[channel_id]:$_SERVER[HTTP_AUTHORIZATION]");
         if (empty($_c)) {
             return array('status' => 0, 'errmsg' => '没有数据');
         }
@@ -292,7 +265,7 @@ class WristbandController extends Controller
         if ($validator->fails()) {
             return array('status' => 0, 'errmsg' => '缺失参数!');
         }
-        $_c = Predis::smembers("userType:$channel_id:$_SERVER[HTTP_AUTHORIZATION]");
+        $_c = Redis::smembers("userType:$channel_id:$_SERVER[HTTP_AUTHORIZATION]");
         if (empty($_c)) {
             return array('status' => 0, 'errmsg' => '没有数据');
         }
@@ -301,7 +274,7 @@ class WristbandController extends Controller
             $list = explode(':', $item);
             if ($list[1] == 2 || $list[1] == 3) {
                 $group_list[$key]['groupId'] = $list[0];
-                $group_list[$key]['groupName'] = Predis::hget("group:$list[0]", "groupName");
+                $group_list[$key]['groupName'] = Redis::hget("group:$list[0]", "groupName");
             }
             sort($group_list);
         }
@@ -314,8 +287,8 @@ class WristbandController extends Controller
 
         $start_time = $request->has('end_time') ? $request->input('start_time') : Carbon::today();
         $end_time = $request->has('end_time') ? $request->input('end_time') : Carbon::tomorrow();
-        $total_student = Predis::hlen("group.student:$group_id[groupId]");
-        $student_list = Predis::hvals("group.student:$group_id[groupId]");
+        $total_student = Redis::hlen("group.student:$group_id[groupId]");
+        $student_list = Redis::hvals("group.student:$group_id[groupId]");
         $da_id = Student::whereIn('student_id', $student_list)->pluck('da_id');
         $late = DB::table('app_shouhuan_data')
             ->whereIn('da_id', $da_id)
@@ -332,7 +305,7 @@ class WristbandController extends Controller
             'normal' => $total_student - $late,
             'late' => $late,
             'early' => $early,
-            'groupName' => Predis::hget("group:$group_id[groupId]", "groupName"),
+            'groupName' => Redis::hget("group:$group_id[groupId]", "groupName"),
             'groupList' => $group_list
         );
         return $data;
@@ -351,7 +324,7 @@ class WristbandController extends Controller
         if ($validator->fails()) {
             return array('status' => 0, 'errmsg' => '缺失参数!');
         }
-        $_c = Predis::smembers("userType:$channel_id:$_SERVER[HTTP_AUTHORIZATION]");
+        $_c = Redis::smembers("userType:$channel_id:$_SERVER[HTTP_AUTHORIZATION]");
         if (empty($_c)) {
             return array('status' => 0, 'errmsg' => '没有数据');
         }
@@ -361,7 +334,7 @@ class WristbandController extends Controller
             $list = explode(':', $item);
             if ($list[1] == 2 || $list[1] == 3) {
                 $group_list[$key]['groupId'] = $list[0];
-                $group_list[$key]['groupName'] = Predis::hget("group:$list[0]", "groupName");
+                $group_list[$key]['groupName'] = Redis::hget("group:$list[0]", "groupName");
             }
             sort($group_list);
         }
@@ -371,7 +344,7 @@ class WristbandController extends Controller
         } else {
             $group_id = $group_list[0];
         }
-        $student_list = Predis::hvals("group.student:$group_id[groupId]");
+        $student_list = Redis::hvals("group.student:$group_id[groupId]");
         $da_id = Student::whereIn('student_id', $student_list)->pluck('da_id');
         if ($input['type'] == 3) {
             DB::setFetchMode(\PDO::FETCH_ASSOC);
@@ -383,8 +356,8 @@ class WristbandController extends Controller
             $result = [];
             foreach ($res as $key => $value) {
                 $result[$key] = $value;
-                $result[$key]['studentName'] = Predis::hget("student:$input[channel_id]:" . $value['student_id'], 'studentName');
-                $result[$key]['groupName'] = Predis::hget("group:$value[group_id]", "groupName");
+                $result[$key]['studentName'] = Redis::hget("student:$input[channel_id]:" . $value['student_id'], 'studentName');
+                $result[$key]['groupName'] = Redis::hget("group:$value[group_id]", "groupName");
             }
 
             if ($result) {
@@ -407,7 +380,7 @@ class WristbandController extends Controller
             $v = [];
             foreach ($result as $key => $item) {
                 $v[$key] = $item;
-                $v[$key]['studentName'] = Predis::hget("student:$input[channel_id]:" . $item['student_id'], 'studentName');
+                $v[$key]['studentName'] = Redis::hget("student:$input[channel_id]:" . $item['student_id'], 'studentName');
             }
 
             if ($v) {
@@ -421,12 +394,13 @@ class WristbandController extends Controller
 
     }
 
-    public function channel_term_info($channel_id)
+    public function channel_term_info( string $channel_id,int $term )
     {
-        $res = DB::table('app_school_time_desc')
-            ->select('sbn_start_time', 'sbn_end_time', 'xbn_start_time', 'xbn_end_time')
-            ->where('channel_id', $channel_id)
-            ->first();
-        return response()->json($res);
+        $res = Redis::hget('_b_school_term_'.$channel_id,$term);
+        if(empty($res)){
+            return array('status'=>0,'errmsg'=>"没有数据");
+        }
+        $res = json_decode($res,true);
+        return $res;
     }
 }

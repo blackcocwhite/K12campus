@@ -3,7 +3,7 @@
 namespace App\Http\Middleware;
 
 use Closure;
-use Predis;
+use Redis;
 
 class WechatUser
 {
@@ -17,11 +17,10 @@ class WechatUser
     public function handle($request, Closure $next)
     {
         if(!empty($_SERVER['HTTP_AUTHORIZATION'])) {
-            if (Predis::exists("user:$_SERVER[HTTP_AUTHORIZATION]")) {
+            if (Redis::exists("user:$_SERVER[HTTP_AUTHORIZATION]")) {
                 return $next($request);
             }
         }
-        return array('status'=>0,'errmsg'=>'您没有权限！');
-
+        return response()->json(['status'=>0,'errmsg'=>'你没有权限']);
     }
 }

@@ -16,8 +16,8 @@ use DB;
 use Validator;
 use Uuid;
 use Carbon\Carbon;
-use Predis;
 use Illuminate\Database\QueryException;
+use Redis;
 
 class UserController extends Controller
 {
@@ -92,7 +92,7 @@ class UserController extends Controller
 
         $auth = $this->check_accendant($input['mobile']);
         if($auth){
-            $mobile = Predis::hget("user:" . $_SERVER['HTTP_AUTHORIZATION'], 'mobile');
+            $mobile = Redis::hget("user:" . $_SERVER['HTTP_AUTHORIZATION'], 'mobile');
             $_info = array(
                 'repaire_id' => $auth['repaire_id'],
                 'user_id' => $_SERVER['HTTP_AUTHORIZATION'],
@@ -147,7 +147,7 @@ class UserController extends Controller
         try {
             User::create($arr);
         } catch(QueryException  $ex) {
-            empty($_keys) or Predis::del($_keys);
+            empty($_keys) or Redis::del($_keys);
             return false;
         }
         return true;

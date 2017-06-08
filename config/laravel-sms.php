@@ -13,7 +13,7 @@ return [
     */
     'routeAttributes' => [
         'prefix' => 'laravel-sms',
-//        'middleware' => 'api',
+        'middleware' => 'web',
     ],
 
     /*

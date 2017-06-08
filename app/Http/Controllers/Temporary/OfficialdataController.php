@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Temporary;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use App\Http\Requests;
 use App\Model\Temporary\Officialdata;
 
 class OfficialdataController extends Controller

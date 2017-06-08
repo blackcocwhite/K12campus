@@ -146,14 +146,10 @@ return [
         App\Providers\EventServiceProvider::class,
         App\Providers\RouteServiceProvider::class,
 
-
-        /*idehelper*/
-//        Barryvdh\LaravelIdeHelper\IdeHelperServiceProvider::class,
-
         /*EasyWeChat*/
         Overtrue\LaravelWechat\ServiceProvider::class,
 
-        // Other service providers...
+        //七牛云
         Overtrue\LaravelFilesystem\Qiniu\QiniuStorageServiceProvider::class,
 
         /*cors*/
@@ -163,8 +159,6 @@ return [
         Toplan\PhpSms\PhpSmsServiceProvider::class,
         Toplan\Sms\SmsManagerServiceProvider::class,
 
-        /*debugbar*/
-//        Barryvdh\Debugbar\ServiceProvider::class,
     ],
 
     /*
@@ -202,7 +196,7 @@ return [
         'Password'  => Illuminate\Support\Facades\Password::class,
         'Queue'     => Illuminate\Support\Facades\Queue::class,
         'Redirect'  => Illuminate\Support\Facades\Redirect::class,
-        'Predis'     => Illuminate\Support\Facades\Redis::class,
+        'Redis'     => Illuminate\Support\Facades\Redis::class,
         'Request'   => Illuminate\Support\Facades\Request::class,
         'Response'  => Illuminate\Support\Facades\Response::class,
         'Route'     => Illuminate\Support\Facades\Route::class,

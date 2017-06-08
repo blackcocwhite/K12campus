@@ -45,7 +45,6 @@ class WechatController extends Controller
                     break;
             }
         });
-//
         Log::info('return response.');
 
         return $wechat->server->serve();

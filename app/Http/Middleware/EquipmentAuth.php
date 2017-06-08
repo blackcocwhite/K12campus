@@ -24,6 +24,6 @@ class EquipmentAuth
                 }
             }
         }
-        return array('status'=>0,'errmsg'=>'您没有权限！');
+        return response()->json(['status'=>0,'errmsg'=>'您没有权限！']);
     }
 }

@@ -9,10 +9,8 @@
 namespace App\Http\Controllers\Equipment;
 
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Config;
 use Uuid;
 use Validator;
-use Predis;
 use App\Repositories\Equipment\OrderRepository;
 use App\Model\Equipment\OrderImg;
 use App\Model\Equipment\Order;
@@ -20,6 +18,7 @@ use App\Model\Equipment\User;
 use Carbon\Carbon;
 use App\Http\Controllers\Controller;
 use DB;
+use Redis;
 
 class OrderController extends Controller
 {
@@ -76,8 +75,8 @@ class OrderController extends Controller
             'repaire_time'=>$now,
             'create_time'=>$now,
             'creator_id'=>$_SERVER['HTTP_AUTHORIZATION'],
-            'user_name'=>Predis::hget('user:'.$_SERVER['HTTP_AUTHORIZATION'],'displayName'),
-            'org_name'=>Predis::hget('channel:'.$input['channel_id'],'channelName'),
+            'user_name'=>Redis::hget('user:'.$_SERVER['HTTP_AUTHORIZATION'],'displayName'),
+            'org_name'=>Redis::hget('channel:'.$input['channel_id'],'channelName'),
             'order_flag'=>1,
         );
         $img = array();
