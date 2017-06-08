@@ -1,7 +1,7 @@
 <?php
 namespace App\Repositories\Wristband;
 
-use Redis;
+use Predis;
 use DB;
 
 class InformRepository
@@ -13,14 +13,14 @@ class InformRepository
 
     public function getStudentId(string $channel_id)
     {
-        $list = Redis::sMembers("userType:$channel_id:$_SERVER[HTTP_AUTHORIZATION]");
+        $list = Predis::sMembers("userType:$channel_id:$_SERVER[HTTP_AUTHORIZATION]");
         $data = [];
         foreach ($list as $key => $item) {
             $_cache = explode(':', $item);
             if ($_cache[1] == 1) {
                 $data['group_id'][$key] = $_cache[0];
-                $data['student_id'][$key] = Redis::hget("group.member:$_cache[0]:$_SERVER[HTTP_AUTHORIZATION]", "studentId");
-                $data['student_name'][$key] = Redis::hget("student:$channel_id:" . $data['student_id'][$key], 'studentName');
+                $data['student_id'][$key] = Predis::hget("group.member:$_cache[0]:$_SERVER[HTTP_AUTHORIZATION]", "studentId");
+                $data['student_name'][$key] = Predis::hget("student:$channel_id:" . $data['student_id'][$key], 'studentName');
             }
         }
         if (empty($data)) return array('status' => 0, 'errmsg' => "no data");

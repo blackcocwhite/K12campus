@@ -3,7 +3,7 @@
 namespace App\Http\Middleware;
 
 use Closure;
-use Redis;
+use Predis;
 
 class WechatUser
 {
@@ -17,7 +17,7 @@ class WechatUser
     public function handle($request, Closure $next)
     {
         if(!empty($_SERVER['HTTP_AUTHORIZATION'])) {
-            if (Redis::exists("user:$_SERVER[HTTP_AUTHORIZATION]")) {
+            if (Predis::exists("user:$_SERVER[HTTP_AUTHORIZATION]")) {
                 return $next($request);
             }
         }

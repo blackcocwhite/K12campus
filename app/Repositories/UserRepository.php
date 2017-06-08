@@ -8,7 +8,7 @@
  */
 namespace App\Repositories;
 
-use Redis;
+use Predis;
 use Uuid;
 
 class UserRepository
@@ -20,8 +20,8 @@ class UserRepository
      */
     public function checkRegister($openid)
     {
-        if($user_id = Redis::hget("wechat.user:$openid",'userId')){
-            $mobile = Redis::hget("user:$user_id",'mobile');
+        if($user_id = Predis::hget("wechat.user:$openid",'userId')){
+            $mobile = Predis::hget("user:$user_id",'mobile');
             return array('status'=>1,'data'=>array('userId'=>$user_id,'mobile'=>$mobile));
         }else{
             return array('status'=>0);
@@ -32,12 +32,12 @@ class UserRepository
      */
     public function systemRegister($openid,$mobile,$wappId='wxde252df044180329')
     {
-        if(Redis::exists("app.user:$mobile")){
-            $user_id = Redis::hget("app.user:$mobile","userId");
-            if(Redis::exists("wechat.user:$openid")){
+        if(Predis::exists("app.user:$mobile")){
+            $user_id = Predis::hget("app.user:$mobile","userId");
+            if(Predis::exists("wechat.user:$openid")){
                 return array('status'=>0,'errmsg'=>'该微信号已经绑定过！');
             }else{
-                Redis::pipeline(function ($pipe) use($openid,$user_id,$mobile,$wappId){
+                Predis::pipeline(function ($pipe) use($openid,$user_id,$mobile,$wappId){
                     $pipe->hmset("wechat.user:$openid", array('userId' => $user_id, 'openId' => $openid,'wappId'=> $wappId))
                         ->hset("user:$user_id",$wappId,$openid)
                         ->sadd("sync.user.list",$user_id);
@@ -55,7 +55,7 @@ class UserRepository
             $displayName = isset($userInfo['nickname']) ? $userInfo['nickname'] : '未关注用户';
             $sex = isset($userInfo['sex']) == 1 ? 0 : 1;
 
-            Redis::pipeline(function ($pipe) use($openid,$mobile,$wappId,$user_id,$sub,$avatar,$displayName,$sex){
+            Predis::pipeline(function ($pipe) use($openid,$mobile,$wappId,$user_id,$sub,$avatar,$displayName,$sex){
                $pipe->hmset("wechat.user:$openid",array('userId'=>$user_id,'openId'=>$openid,'wappId'=>$wappId))
                    ->hmset("user:$user_id",array('userId' => $user_id, $wappId => $openid, 'mobile' => $mobile, 'avatar' => $avatar, 'displayName' => $displayName,'subscribe' => $sub,'sex' => $sex))
                    ->hmset("app.user:$mobile",array('userId' => $user_id, 'mobile' => $mobile))
@@ -73,7 +73,7 @@ class UserRepository
      */
     public function getSubscribeUserInfo($openid)
     {
-        return Redis::hgetall("_uid($openid)");
+        return Predis::hgetall("_uid($openid)");
     }
 
     /**
@@ -84,8 +84,8 @@ class UserRepository
      */
     public function _modifyUser($openid,$type,$data)
     {
-        if($user_id = Redis::hget("wechat.user:$openid",'userId')){
-            Redis::hset("user:$user_id",$type,$data);
+        if($user_id = Predis::hget("wechat.user:$openid",'userId')){
+            Predis::hset("user:$user_id",$type,$data);
         }
     }
 }

@@ -18,7 +18,7 @@ use App\Model\Equipment\User;
 use Carbon\Carbon;
 use App\Http\Controllers\Controller;
 use DB;
-use Redis;
+use Predis;
 
 class OrderController extends Controller
 {
@@ -75,8 +75,8 @@ class OrderController extends Controller
             'repaire_time'=>$now,
             'create_time'=>$now,
             'creator_id'=>$_SERVER['HTTP_AUTHORIZATION'],
-            'user_name'=>Redis::hget('user:'.$_SERVER['HTTP_AUTHORIZATION'],'displayName'),
-            'org_name'=>Redis::hget('channel:'.$input['channel_id'],'channelName'),
+            'user_name'=>Predis::hget('user:'.$_SERVER['HTTP_AUTHORIZATION'],'displayName'),
+            'org_name'=>Predis::hget('channel:'.$input['channel_id'],'channelName'),
             'order_flag'=>1,
         );
         $img = array();
