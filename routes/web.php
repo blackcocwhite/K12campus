@@ -23,6 +23,5 @@ Route::group(['namespace'=>"Temporary","middleware" => "csrf"],function () {
     Route::put('/temporary/questionnaire/{id}',"OfficialdataController@update");
     Route::delete('/temporary/questionnaire/{id}',"OfficialdataController@destroy");
     Route::get('/list', "TestController@index");
-//    Route::get('/student', "TestController@index");
 });
 Route::any('/wechat', 'WechatController@serve');

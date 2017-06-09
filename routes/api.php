@@ -1,8 +1,5 @@
 <?php
 
-Route::group(['middleware'=>'wechat.user'],function(){
-    Route::get('/getSid',"Wristband\WristbandController@getId");
-});
 Route::group(['prefix'=>'v1'], function () {
     /****系统注册****/
     Route::get('/checkUser/{openid}',"UserController@login");
