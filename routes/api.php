@@ -47,7 +47,7 @@ Route::group(['prefix'=>'v1'], function () {
         Route::post('/admitLeave', "WristbandController@admitLeave");
         Route::post('/attendance', "WristbandController@attendance");
         Route::post('/groupInfo', 'WristbandController@groupInfo');
-        Route::get('/channel_term_info/{channle_id}/{term}', "WristbandController@channel_term_info");
+        Route::get('/channel_term_info/{channel_id}/{term}', "WristbandController@channel_term_info");
     });
 
     /*****微校园应用*******/
