@@ -53,6 +53,9 @@ Route::group(['prefix'=>'v1'], function () {
     /*****微校园应用*******/
     Route::group(['namespace' => 'MicroCampus', 'prefix' => 'microCampus', 'middleware' => 'wechat.user'],function () {
         Route::get('/syllabus/{channel_id}/{term}',"SyllabusController@index");
+        Route::get('/resultList/{channel_id}',"ResultController@index");
+        Route::get('/resultInfo/{exam_id}/{student_id}',"ResultController@show");
+        Route::post('/statistics',"ResultController@statistics");
     });
 
 });

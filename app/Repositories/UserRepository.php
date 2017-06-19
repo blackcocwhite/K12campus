@@ -28,7 +28,7 @@ class UserRepository
         }
     }
     /**
-     * 系统级注册
+     * 系统注册
      */
     public function systemRegister($openid,$mobile,$wappId='wxde252df044180329')
     {
@@ -87,5 +87,29 @@ class UserRepository
         if($user_id = Predis::hget("wechat.user:$openid",'userId')){
             Predis::hset("user:$user_id",$type,$data);
         }
+    }
+
+    public function getStudent($user_id,$channel_id)
+    {
+        $list = Predis::sMembers("userType:$channel_id:$user_id");
+    }
+
+    public function getGroup($user_id,$channel_id)
+    {
+        $list = Predis::sMembers("userType:$channel_id:$user_id");
+        $data = [];
+        if(! empty($list)){
+            foreach ($list as $key => $item) {
+                $cache = explode(':',$item);
+                $data[$key]['group_id'] = $cache[0];
+                $data[$key]['user_type'] = $cache[1];
+                if($cache[1] == 1){
+                    $data[$key]['student_name'] = Predis::hGet("group.member:$cache[0]:$user_id","studentName");
+                    $data[$key]['student_id'] = Predis::hget("group.member:$cache[0]:$user_id","studentId");
+                }
+            }
+        }
+        return $data;
+
     }
 }

@@ -398,9 +398,9 @@ class WristbandController extends Controller
     {
         $res = Predis::hget('_b_school_term_'.$channel_id,$term);
         if(empty($res)){
-            return array('status'=>0,'errmsg'=>"没有数据");
+            return array('status'=>0,'errmsg'=>"no data");
         }
         $res = json_decode($res,true);
-        return $res;
+        return array('status'=>1,'data'=>$res);
     }
 }

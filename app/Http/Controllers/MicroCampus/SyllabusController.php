@@ -24,9 +24,23 @@ class SyllabusController extends Controller
             }
         }
         if (empty($data)) return array('status' => 0, 'errmsg' => "no data");
-        $result = Predis::hget('_b_school_term_course_'.$channel_id,$term.'_'.$data['group_id'][0]);
-        $result = json_decode($result,true);
-        $result = json_decode($result['course'],true);
-        return $result;
+        $result = [];
+        if (count($data['group_id'])>1){
+            foreach ($data['group_id'] as $key => $gid) {
+                $result[$key]['student_name'] = Predis::hget("group.member:$gid:$_SERVER[HTTP_AUTHORIZATION]",'studentName');
+                $json = Predis::hget('_b_school_term_course_'.$channel_id,$term.'_'.$data['group_id'][0]);
+                $json = json_decode($json,true);
+                $json = json_decode($json['course'],true);
+                $result[$key]['data'] = $json;
+            }
+        }else{
+            $result[$key]['student_name'] = Predis::hget("group.member:".$data['group_id'][0].":$_SERVER[HTTP_AUTHORIZATION]",'studentName');
+            $json = Predis::hget('_b_school_term_course_'.$channel_id,$term.'_'.$data['group_id'][0]);
+            $json = json_decode($json,true);
+            $json = json_decode($json['course'],true);
+            $result[$key]['data'] = $json;
+        }
+
+        return array('status'=>1,'data'=>$result);
     }
 }
