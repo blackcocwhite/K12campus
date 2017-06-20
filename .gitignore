@@ -6,3 +6,7 @@
 .idea
 _ide_helper.php
 .phpstorm.meta.php
+aliases
+after.sh
+Homestead.yaml
+Vagrantfile

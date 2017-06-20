@@ -58,4 +58,9 @@ Route::group(['prefix'=>'v1'], function () {
         Route::post('/statistics',"ResultController@statistics");
     });
 
+    Route::group(['namespace' => 'MicroCampus', 'prefix' => 'microCampus'], function () {
+        Route::get('/voteList/{channel_id}/{page}', 'VoteController@index');
+        Route::post('/vote', 'VoteController@show');
+        Route::post('/doVote', 'VoteController@store');
+    });
 });
