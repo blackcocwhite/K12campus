@@ -85,7 +85,7 @@ class ResultController extends Controller
             ->select('score', 'base_school_exam.exam_name')
             ->get()
             ->all();
-        if(count($result)<1){
+        if( count( $result ) < 1 ){
             return response()->json(['status'=>0,'errmsg'=>'data not found'],404);
         }
 

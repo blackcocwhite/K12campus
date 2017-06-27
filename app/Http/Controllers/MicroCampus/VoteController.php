@@ -38,6 +38,8 @@ class VoteController extends Controller
             $result[$key]['state'] = $cache['state'];
             $result[$key]['voteDesc'] = $cache['voteDesc'];
             $result[$key]['voteNum'] = $cache['voteNum'] ?? 0;
+            $result[$key]['voteRule'] = $cache['voteRule'];
+            $result[$key]['voteCount'] = $cache['voteCount'] ?? 0;
         }
 
         return response()->json(['status' => 1, 'total' => $total, 'currentPage' => $page, 'time' => time() * 1000, 'data' => $result]);
@@ -56,11 +58,13 @@ class VoteController extends Controller
         }
 
         $data = Predis::hgetall("a_schoolVote:base:$input[voteId]");
-        if ($data['voteRule'] == 2) {
-            $time = Carbon::today()->format('Ymd');
-            $data['myVote'] = Predis::sCard('a_schoolVote.user:' . $input['openId'] . ':' . $input['voteId'] . "_" . $time);
-        }
+        $data['myVote'] = Predis::sMembers('a_schoolVote.user:' . $input['openId'] . ':' . $input['voteId']);
+        $data['voteResult'] = Predis::hGetAll("a_schoolVote:result:$input[voteId]");
         $data['items'] = json_decode($data['items'], true);
+        $data['channelName'] = Predis::hget("channel:$data[channelId]",'channelName');
+
+        Predis::hIncrby("a_schoolVote:base:$input[voteId]", "visitNum", 1);
+
         return response()->json(['status' => 1, 'time' => time() * 1000, 'data' => $data]);
     }
 
@@ -74,7 +78,7 @@ class VoteController extends Controller
             'itemId' => 'required',
         ]);
         if ($validator->fails()) {
-            return response()->json(['status' => 0, 'errmsg' => '参数不正确'], 403);
+            return response()->json(['status' => 0, 'errmsg' => '缺少参数'], 403);
         }
         $info = Predis::hgetall("a_schoolVote:base:$input[voteId]");
         if ($info['state'] != 1) {
@@ -82,27 +86,15 @@ class VoteController extends Controller
         }
         $rule = $info['voteRule'];
         $end_time = $info['endTime'];
+        if(time() > $end_time/1000){
+            return response()->json(['status' => 0, 'errmsg' => '投票已截止']);
+        }
         $limit = $info['limitTimes'];
         if ($rule == 1) {
-            return $this->_saveOneClick($input, $end_time);
+            return $this->_saveOneClick($input, $end_time, $limit);
         } elseif ($rule == 2) {
-            return $this->_saveMoreClick($input, $end_time, $limit);
+            return $this->_saveMoreClick($input, $limit);
         }
-    }
-
-    public function option(Request $request)
-    {
-        $input = $request->all();
-        $validator = Validator::make($input, [
-            'openId' => 'required',
-            'voteId' => 'required',
-            'optionId' => 'required',
-        ]);
-        if ($validator->fails()) {
-            return response()->json(['status' => 0, 'errmsg' => '参数不正确'], 403);
-        }
-        $data = Predis::hgetall("a_schoolVote:base:$input[voteId]");
-
     }
 
     public function visit($voteId, $openId)
@@ -114,58 +106,84 @@ class VoteController extends Controller
         return response()->json(['status' => 1]);
     }
 
-    private function _saveOneClick($array, $end_time)
+    private function _saveOneClick($array, $end_time, int $limit)
     {
         $key = 'a_schoolVote.user:' . $array['openId'] . ':' . $array['voteId'];
         if (Predis::exists($key)) {
-            return response()->json(['status' => 0, 'errmgs' => '您已经投过票了'], 403);
+            return response()->json(['status' => 0, 'errmsg' => 'Repeat vote']);
         }
-        $time = Carbon::today()->format('Ymd');
-        Predis::hset($key, $array['optionId'], $time);
-//        Predis::expireat($key,($end_time)/1000);
-        if ($this->save($array)) {
-            return response()->json(['status' => 1, 'data' => 'success']);
-        } else {
-            Predis::hdel($key, $array['optionId']);
-            return response()->json(['status' => 0, 'errmgs' => 'fail'], 403);
+        $count = count($array['optionId']);
+        if($limit !== 0){
+            if ($count > $limit) {
+                return response()->json(['status' => 0, 'errmsg' => 'Too more options']);
+            }
         }
-    }
 
-    private function _saveMoreClick($array, $end_time, $limit)
-    {
-        $time = Carbon::today()->format('Ymd');
-        $key = 'a_schoolVote.user:' . $array['openId'] . ':' . $array['voteId'] . "_" . $time;
-        $count = Predis::scard($key);
-        if ($count >= $limit || Predis::sIsMember($key, $array['optionId'])) {
-            return response()->json(['status' => 0, 'errmgs' => 'Repeat voting'], 403);
-        }
-        Predis::sadd($key, $array['optionId']);
-//        Predis::expireat($key,($end_time)/1000);
-        if ($this->save($array)) {
-            return response()->json(['status' => 1, 'data' => array('myVote' => $count + 1)]);
+        Predis::sAdd($key, $array['optionId']);
+        $end_time = $end_time/1000;
+        $expire = Carbon::createFromTimestamp($end_time)->addMonth(1)->timestamp;
+        Predis::expireat($key,$expire);
+
+        if ($this->save($array, $count)) {
+            return response()->json(['status' => 1, 'data' => array('myVote' => Predis::sMembers('a_schoolVote.user:' . $array['openId'] . ':' . $array['voteId']))]);
         } else {
             Predis::sRem($key, $array['optionId']);
-            return response()->json(['status' => 0, 'errmgs' => 'fail'], 403);
+            return response()->json(['status' => 0, 'errmsg' => 'fail'], 403);
         }
     }
 
-    private function save($arr)
+    private function _saveMoreClick($array, int $limit)
     {
-        $array = array($arr);
-        $string = Uuid::generate(1);
-        $array = array_map(function ($item) use ($string) {
-            return [
-                'vote_id' => $item['voteId'],
-                'item_id' => $item['itemId'],
-                'option_id' => $item['optionId'],
-                'open_id' => $item['openId'],
-                'create_time' => Carbon::now(),
+        $key = 'a_schoolVote.user:' . $array['openId'] . ':' . $array['voteId'];
+        if (Predis::exists($key)) {
+            return response()->json(['status' => 0, 'errmsg' => 'Repeat vote']);
+        }
+
+        $count = count($array['optionId']);
+        if($limit !== 0){
+
+            if ($count > $limit) {
+                return response()->json(['status' => 0, 'errmsg' => 'Too more options']);
+            }
+        }
+
+
+        $expire_time = Carbon::tomorrow()->timestamp;
+        Predis::sadd($key, $array['optionId']);
+        Predis::expireat($key,$expire_time);
+
+        if ($this->save($array, $count)) {
+
+            return response()->json(['status' => 1, 'data' => array('myVote' => Predis::sMembers('a_schoolVote.user:' . $array['openId'] . ':' . $array['voteId']))]);
+
+        } else {
+
+            Predis::sRem($key, $array['optionId']);
+            return response()->json(['status' => 0, 'errmsg' => 'fail'], 403);
+
+        }
+    }
+
+    private function save($arr, $count)
+    {
+        $now = Carbon::now();
+        foreach ($arr['optionId'] as $key => $v) {
+            $string = Uuid::generate(1);
+            $data[$key] = [
+                'vote_id' => $arr['voteId'],
+                'item_id' => $arr['itemId'],
+                'option_id' => $v,
+                'open_id' => $arr['openId'],
+                'create_time' => $now,
                 'result_id' => $string->string,
             ];
-        }, $array);
-        if (DB::table('a_schoolVote_result')->insert($array)) {
-            Predis::hincrby("a_schoolVote:base:$arr[voteId]", "voteNum", 1);
-            Predis::hincrby("app_schoolVote:result:$arr[voteId]", $arr['optionId'], 1);
+        }
+        if (DB::table('app_school_vote_result')->insert($data)) {
+            Predis::hincrby("a_schoolVote:base:$arr[voteId]", "voteCount", 1);
+            Predis::hincrby("a_schoolVote:base:$arr[voteId]", "voteNum", $count);
+            array_map(function ($item) use ($arr) {
+                Predis::hincrby("a_schoolVote:result:$arr[voteId]", $item, 1);
+            }, $arr["optionId"]);
             return true;
         } else {
             return false;
