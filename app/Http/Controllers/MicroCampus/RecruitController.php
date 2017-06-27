@@ -66,12 +66,10 @@ class RecruitController extends Controller
             ]
         ];
         if($data['enroll_id']){
-
             foreach ($contact as $key => $item) {
-//                $contact_id = Uuid::generate(1);
-//                $item['contact_id'] = $contact_id->string;
-                DB::table("base_school_enroll_contact")->where('lianxiren_'.($key+1),$item['lianxiren_'.($key+1)])->update($item);
-
+                DB::table("base_school_enroll_contact")
+                    ->where('contact_id',$item['lianxiren_'.($key+1)])
+                    ->update($item);
             }
             $unset_key = [
                 'lianxiren_0_user_name',

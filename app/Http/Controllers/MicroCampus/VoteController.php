@@ -42,8 +42,12 @@ class VoteController extends Controller
             $result[$key]['voteCount'] = $cache['voteCount'] ?? 0;
         }
 
-        return response()->json(['status' => 1, 'total' => $total, 'currentPage' => $page, 'time' => time() * 1000, 'data' => $result]);
-
+        return response()->json(['status' => 1, 'total' => $total,
+            'currentPage' => $page,
+            'time' => time() * 1000,
+            'channelName' => Predis::hget("channel:$channel_id","channelName"),
+            'data' => $result
+        ]);
     }
 
     public function show(Request $request)
@@ -58,6 +62,9 @@ class VoteController extends Controller
         }
 
         $data = Predis::hgetall("a_schoolVote:base:$input[voteId]");
+        if(empty($data)){
+            return response()->json(['status'=>0,'errmsg'=>'data not found'],403);
+        }
         $data['myVote'] = Predis::sMembers('a_schoolVote.user:' . $input['openId'] . ':' . $input['voteId']);
         $data['voteResult'] = Predis::hGetAll("a_schoolVote:result:$input[voteId]");
         $data['items'] = json_decode($data['items'], true);
