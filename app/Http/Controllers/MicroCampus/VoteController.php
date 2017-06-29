@@ -84,6 +84,11 @@ class VoteController extends Controller
             'optionId' => 'required',
             'itemId' => 'required',
         ]);
+        $now = Carbon::now()->format('YmdHi');
+        if(Predis::exists("vote_$input[openId]_$input[voteId]_$now")){
+            return response()->josn(['status'=>0,'errmsg'=>'Too Many Requests'],429);
+        }
+
         if ($validator->fails()) {
             return response()->json(['status' => 0, 'errmsg' => '缺少参数'], 403);
         }
@@ -174,6 +179,7 @@ class VoteController extends Controller
     private function save($arr, $count)
     {
         $now = Carbon::now();
+        $time = Carbon::now()->format('YmdHi');
         foreach ($arr['optionId'] as $key => $v) {
             $string = Uuid::generate(1);
             $data[$key] = [
@@ -186,6 +192,7 @@ class VoteController extends Controller
             ];
         }
         if (DB::table('app_school_vote_result')->insert($data)) {
+            Predis::setex("vote_$arr[openId]_$arr[voteId]_$time",10,1);
             Predis::hincrby("a_schoolVote:base:$arr[voteId]", "voteCount", 1);
             Predis::hincrby("a_schoolVote:base:$arr[voteId]", "voteNum", $count);
             array_map(function ($item) use ($arr) {
