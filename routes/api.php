@@ -62,11 +62,13 @@ Route::group(['prefix'=>'v1'], function () {
         Route::get('/voteList/{channel_id}/{page}', 'VoteController@index');
         Route::post('/vote', 'VoteController@show');
         Route::post('/doVote', 'VoteController@store');
+        Route::post('/voteStatistics',"VoteController@statistics");
 
         Route::get('/recruitment/{channel_id}',"RecruitController@index");
         Route::get('/nation',"RecruitController@getNation");
         Route::get('/region/{parent_id}',"RecruitController@getRegion");
         Route::post('/recruit',"RecruitController@store");
         Route::get('/recruit/{open_id}',"RecruitController@show");
+
     });
 });

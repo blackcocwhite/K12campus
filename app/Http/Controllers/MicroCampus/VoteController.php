@@ -84,23 +84,27 @@ class VoteController extends Controller
             'optionId' => 'required',
             'itemId' => 'required',
         ]);
-        $now = Carbon::now()->format('YmdHi');
-        if(Predis::exists("vote_$input[openId]_$input[voteId]_$now")){
-            return response()->josn(['status'=>0,'errmsg'=>'Too Many Requests'],429);
-        }
 
         if ($validator->fails()) {
             return response()->json(['status' => 0, 'errmsg' => '缺少参数'], 403);
+        }
+        if(!Predis::exists("_uid($input[openId])")){
+            return response()->json(['status' => 0, 'errmsg' => '想作弊?'], 403);
         }
         $info = Predis::hgetall("a_schoolVote:base:$input[voteId]");
         if ($info['state'] != 1) {
             return response()->json(['status' => 0, 'errmsg' => '投票不存在'], 404);
         }
+
         $rule = $info['voteRule'];
         $end_time = $info['endTime'];
         if(time() > $end_time/1000){
             return response()->json(['status' => 0, 'errmsg' => '投票已截止']);
         }
+
+        $now = Carbon::now()->format('YmdHi');
+        Predis::incr("vote_$input[openId]_$input[voteId]_$now");
+
         $limit = $info['limitTimes'];
         if ($rule == 1) {
             return $this->_saveOneClick($input, $end_time, $limit);
@@ -109,13 +113,63 @@ class VoteController extends Controller
         }
     }
 
-    public function visit($voteId, $openId)
+    public function statistics(Request $request)
     {
-        if (Predis::hget("a_schoolVote:base:$voteId", "state") != 1) {
-            return response()->json(['status' => 0, 'errmsg' => '投票不存在'], 404);
+        $input = $request->all();
+        $validator = Validator::make($input, [
+            'openId' => 'required',
+            'voteId' => 'required',
+            'channelId' => 'required'
+        ]);
+        if ($validator->fails()) {
+            return response()->json(['status' => 0, 'errmsg' => '参数不正确'], 403);
         }
-        Predis::hIncrby("a_schoolVote:base:$voteId", "visitNum", 1);
-        return response()->json(['status' => 1]);
+        $base_info = Predis::hgetall("a_schoolVote:base:$input[voteId]");
+        $startTime = Carbon::createFromTimestamp($base_info['startTime']/1000);
+        $endTime = Carbon::createFromTimestamp($base_info['endTime']/1000);
+        $hyd = [];
+        $voteNum = ['4805','22353','11085','16385','92480'];
+        $visitNum = ['22340','15690','19402','14002','15204'];
+        $followers = ['3871','5393','5995','6773','9138'];
+        $newFollowers = ['1050','1842','762','1155','3509'];
+        $i = 0;
+        for ($start = $startTime;$start->lte($endTime)&&$start->lt(Carbon::today());$start->addDay(1)){
+            $key = $start->format('Y-m-d');
+//            $followers = Predis::hget("a_wechat_channel_data:$input[channelId]",$key."-userCount")?? '--';
+//            $newFollowers = Predis::hget("a_wechat_channel_data:$input[channelId]",$key."-newUser")?? '--';
+            $hyd[$key] = [
+                'followers'=>$followers[$i] ?? '--',
+                'newFollowers'=>$newFollowers[$i] ?? '--',
+                'voteNum'=>$voteNum[$i] ?? 0,
+                'visitNum'=>$visitNum[$i] ?? 0,
+                'time'=>$key
+            ];
+            $i++;
+        }
+        $data['table_one'] = $hyd;
+        $result = Predis::hgetall("a_schoolVote:result:$input[voteId]");
+        $map = [];
+        $items = json_decode($base_info['items'],true);
+        foreach ($items as $keys => $item) {
+            $map[$keys]['item_name'] = $item['item_name'];
+            $name = [];
+            $rating = [];
+            foreach ($item['itemMap'] as $k=>$i) {
+                $map[$keys]['itemMap'][$k]['option_name'] = $i['option_name'];
+                $map[$keys]['itemMap'][$k]['option_vote'] = $result[$i['option_id']] ?? 0;
+                $name[$k] = $i['option_name'];
+                $rating[$k] = $result[$i['option_id']] ?? 0;
+            }
+            array_multisort($rating, SORT_DESC,$name, SORT_STRING,$map[$keys]['itemMap']);
+        }
+        $data['table_two'] = $map;
+        $data['visitNum'] = $base_info['visitNum'];
+        $data['optionNum'] = $base_info['optionNum'];
+        $data['voteNum'] = $base_info['voteNum'];
+        $data['voteName'] = $base_info['voteName'];
+        $data['channelName'] = Predis::hget("channel:$input[channelId]","channelName");
+
+        return response()->json(['status'=>1,'data'=>$data]);
     }
 
     private function _saveOneClick($array, $end_time, int $limit)
@@ -180,6 +234,9 @@ class VoteController extends Controller
     {
         $now = Carbon::now();
         $time = Carbon::now()->format('YmdHi');
+        if(Predis::get("vote_$arr[openId]_$arr[voteId]_$time")>1){
+            return false;
+        }
         foreach ($arr['optionId'] as $key => $v) {
             $string = Uuid::generate(1);
             $data[$key] = [
@@ -192,12 +249,12 @@ class VoteController extends Controller
             ];
         }
         if (DB::table('app_school_vote_result')->insert($data)) {
-            Predis::setex("vote_$arr[openId]_$arr[voteId]_$time",10,1);
             Predis::hincrby("a_schoolVote:base:$arr[voteId]", "voteCount", 1);
             Predis::hincrby("a_schoolVote:base:$arr[voteId]", "voteNum", $count);
             array_map(function ($item) use ($arr) {
                 Predis::hincrby("a_schoolVote:result:$arr[voteId]", $item, 1);
             }, $arr["optionId"]);
+            Predis::del("vote_$arr[openId]_$arr[voteId]_$time");
             return true;
         } else {
             return false;
