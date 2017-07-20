@@ -40,6 +40,10 @@ class RecruitController extends Controller
         return response()->json(['status'=>1,'data'=>$result]);
     }
 
+    /**
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function store(Request $request)
     {
         $data = $request->all();
@@ -159,7 +163,9 @@ class RecruitController extends Controller
     {
 
         $result = DB::table("base_school_enroll_student")->where("open_id",$open_id)->get();
-
+        if(count($result)<1){
+            return response()->json(['status'=>0,'errmsg'=>'data not found'],404);
+        }
         return response()->json(['status'=>1,'data'=>$result]);
     }
 

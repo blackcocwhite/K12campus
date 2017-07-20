@@ -125,6 +125,9 @@ class VoteController extends Controller
             return response()->json(['status' => 0, 'errmsg' => '参数不正确'], 403);
         }
         $base_info = Predis::hgetall("a_schoolVote:base:$input[voteId]");
+        if(empty($base_info)){
+            return response()->json(['status'=>0,'errmsg'=>'data not found'],404);
+        }
         $startTime = Carbon::createFromTimestamp($base_info['startTime']/1000);
         $endTime = Carbon::createFromTimestamp($base_info['endTime']/1000);
         $hyd = [];

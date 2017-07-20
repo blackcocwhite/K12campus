@@ -24,11 +24,12 @@ class SyllabusController extends Controller
             }
         }
         if (empty($data)) return array('status' => 0, 'errmsg' => "no data");
+        sort($data['group_id']);
         $result = [];
         if (count($data['group_id'])>1){
             foreach ($data['group_id'] as $key => $gid) {
                 $result[$key]['student_name'] = Predis::hget("group.member:$gid:$_SERVER[HTTP_AUTHORIZATION]",'studentName');
-                $json = Predis::hget('_b_school_term_course_'.$channel_id,$term.'_'.$data['group_id'][0]);
+                $json = Predis::hget('_b_school_term_course_'.$channel_id,$term.'_'.$gid);
                 $json = json_decode($json,true);
                 $json = json_decode($json['course'],true);
                 $result[$key]['data'] = $json;
@@ -40,7 +41,7 @@ class SyllabusController extends Controller
             $json = json_decode($json['course'],true);
             $result[$key]['data'] = $json;
         }
-
+        sort($result);
         return array('status'=>1,'data'=>$result);
     }
 }
