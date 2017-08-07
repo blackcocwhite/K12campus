@@ -112,7 +112,6 @@ return [
     */
 
     'redis' => [
-
         'cluster' => false,
 
         'default' => [
@@ -121,7 +120,6 @@ return [
             'port'     => env('REDIS_PORT', 6379),
             'database' => env('REDIS_DATABASE', 1)
         ],
-
     ],
 
 ];

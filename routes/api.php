@@ -2,8 +2,8 @@
 
 Route::group(['prefix'=>'v1'], function () {
     /****系统注册****/
-    Route::get('/checkUser/{openid}',"UserController@login");
-    Route::get('/systemRegister/{openid}/{mobile}/{wappid}',"UserController@create");
+    Route::get('/checkUser/{openid}/{unionid}/{wappid}',"UserController@login");
+    Route::post('/systemRegister',"UserController@create");
 
     /****教育装备客服系统****/
     Route::post('/doRegister',"Equipment\UserController@postRegister");//如果是负责人直接注册 则直接关联

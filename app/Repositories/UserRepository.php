@@ -18,9 +18,11 @@ class UserRepository
      * @param $openid
      * @return array
      */
-    public function checkRegister($openid)
+    public function checkRegister($uid,$openid,$wappid='wxde252df044180329')
     {
-        if($user_id = Predis::hget("wechat.user:$openid",'userId')){
+        if($user_id = Predis::hget("WechatUserWithUnionId:$uid",'userId')){
+            Predis::hset("WechatUserWithUnionId:$uid",$wappid,$openid);
+            Predis::hset("user:$user_id",$wappid,$openid);
             $mobile = Predis::hget("user:$user_id",'mobile');
             return array('status'=>1,'data'=>array('userId'=>$user_id,'mobile'=>$mobile));
         }else{
@@ -30,19 +32,21 @@ class UserRepository
     /**
      * 系统注册
      */
-    public function systemRegister($openid,$mobile,$wappId='wxde252df044180329')
+    public function systemRegister($uid,$openid,$mobile,$wappid='wxde252df044180329')
     {
         if(Predis::exists("app.user:$mobile")){
             $user_id = Predis::hget("app.user:$mobile","userId");
-            if(Predis::exists("wechat.user:$openid")){
+            if(Predis::exists("WechatUserWithUnionId:$uid")){
                 return array('status'=>0,'errmsg'=>'该微信号已经绑定过！');
             }else{
-                Predis::pipeline(function ($pipe) use($openid,$user_id,$mobile,$wappId){
-                    $pipe->hmset("wechat.user:$openid", array('userId' => $user_id, 'openId' => $openid,'wappId'=> $wappId))
-                        ->hset("user:$user_id",$wappId,$openid)
+                Predis::pipeline(function ($pipe) use($uid,$openid,$user_id,$mobile,$wappid){
+                    $pipe->hmset("WechatUserWithUnionId:$uid",
+                        array('userId' => $user_id, $wappid => $openid)
+                    )
+                        ->hset("user:$user_id",$wappid,$openid)
                         ->sadd("sync.user.list",$user_id);
                 });
-                $_keys = ["wechat.user:$openid","user:$user_id"];
+                $_keys = ["WechatUserWithUnionId:$uid","user:$user_id"];
                 return array('status'=>1,'data'=>array('userId'=>$user_id,'_keys'=>$_keys));
             }
         }else{
@@ -50,18 +54,19 @@ class UserRepository
             $user_id = $string->string;
 
             $userInfo = $this->getSubscribeUserInfo($openid);
-            $sub = isset($userInfo['subscribe']) ? $userInfo['subscribe'] : 0;
             $avatar = isset($userInfo['headimgurl']) ? $userInfo['headimgurl'] : '';
             $displayName = isset($userInfo['nickname']) ? $userInfo['nickname'] : '未关注用户';
             $sex = isset($userInfo['sex']) == 1 ? 0 : 1;
 
-            Predis::pipeline(function ($pipe) use($openid,$mobile,$wappId,$user_id,$sub,$avatar,$displayName,$sex){
-               $pipe->hmset("wechat.user:$openid",array('userId'=>$user_id,'openId'=>$openid,'wappId'=>$wappId))
-                   ->hmset("user:$user_id",array('userId' => $user_id, $wappId => $openid, 'mobile' => $mobile, 'avatar' => $avatar, 'displayName' => $displayName,'subscribe' => $sub,'sex' => $sex))
+            Predis::pipeline(function ($pipe) use($uid,$openid,$mobile,$wappid,$user_id,$sub,$avatar,$displayName,$sex){
+               $pipe->hmset("WechatUserWithUnionId:$uid",
+                   array('userId'=>$user_id,$wappid=>$openid)
+               )
+                   ->hmset("user:$user_id",array('userId' => $user_id, $wappid => $openid, 'mobile' => $mobile, 'avatar' => $avatar, 'displayName' => $displayName,'sex' => $sex))
                    ->hmset("app.user:$mobile",array('userId' => $user_id, 'mobile' => $mobile))
                    ->sadd("sync.user.list",$user_id);
             });
-            $_keys = ["wechat.user:$openid","user:$user_id","app.user:$mobile"];
+            $_keys = ["WechatUserWithUnionId:$uid","user:$user_id","app.user:$mobile"];
             return array('status'=>1,'data'=>array('userId'=>$user_id,'_keys'=>$_keys));
         }
     }
@@ -78,13 +83,13 @@ class UserRepository
 
     /**
      * 修改用户信息
-     * @param $openid
+     * @param $uid
      * @param $type
      * @param $data
      */
-    public function _modifyUser($openid,$type,$data)
+    public function _modifyUser($uid,$type,$data)
     {
-        if($user_id = Predis::hget("wechat.user:$openid",'userId')){
+        if($user_id = Predis::hget("WechatUserWithUnionId:$uid",'userId')){
             Predis::hset("user:$user_id",$type,$data);
         }
     }

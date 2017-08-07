@@ -61,7 +61,7 @@ class UserController extends Controller
                     'parent_id' => $return['data']['userId'],
                     'identity' => $auth['identity']
                 );
-                if(!$this->doRegister($_info,"wechat.user:".$input['openid'])){
+                if(!$this->doRegister($_info,$return['data']['_keys'][0])){
                     return array('stauts'=>0,'errmsg'=>'注册失败！');
                 }
                 $return['data']['repaire_id'] = $auth['repaire_id'];

@@ -82,7 +82,7 @@ class ResultController extends Controller
             ->join('base_school_exam','base_school_subject_score.exam_id','=','base_school_exam.exam_id')
             ->where('student_id',$request->input('student_id'))
             ->where('base_school_subject_score.subject_id',$request->input('subject_id'))
-            ->select('score', 'base_school_exam.exam_name')
+            ->select('score', 'base_school_exam.exam_name','exam_date')
             ->get()
             ->all();
         if( count( $result ) < 1 ){
