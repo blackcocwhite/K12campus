@@ -6,7 +6,7 @@ return [
      *
      * 当值为 false 时，所有的日志都不会记录
      */
-    'debug'  => false,
+    'debug' => true,
 
     /*
      * 使用 Laravel 的缓存系统
@@ -16,10 +16,10 @@ return [
     /*
      * 账号基本信息，请从微信公众平台/开放平台获取
      */
-    'app_id'  => env('WECHAT_APPID', 'wx32f464e861920b93'),         // AppID
-    'secret'  => env('WECHAT_SECRET', 'adb4904e5b25f83a42d9a4c1065ce022'),     // AppSecret adb4904e5b25f83a42d9a4c1065ce022
+    'app_id' => env( 'WECHAT_APPID', 'wxcd02b625d3658784' ),         // AppID
+    'secret' => env( 'WECHAT_SECRET', '77c4278a0036a983841a027a81a1cb32' ),     // AppSecret adb4904e5b25f83a42d9a4c1065ce022
     'token'   => env('WECHAT_TOKEN', '8dsun'),          // Token
-    'aes_key' => env('WECHAT_AES_KEY', 'AeMDYgjWaooW8Sgwr0BYHPrKv3etnArotpZcdk2BdZu'),                    // EncodingAESKey
+    'aes_key' => env( 'WECHAT_AES_KEY', '3FomTHhORSBNbbpEKagEkmDEnRE9xt21WcVVB6W8aep' ),                    // EncodingAESKey
 
     /**
      * 开放平台第三方平台配置信息
@@ -30,7 +30,7 @@ return [
          */
         'serve_url' => env('WECHAT_OPEN_PLATFORM_SERVE_URL', 'serve'),
     ],
-    
+
     /*
      * 日志配置
      *
@@ -75,7 +75,7 @@ return [
      *
      * 当 enable_mock 为 true 则会启用模拟微信授权，用于开发时使用，开发完成请删除或者改为 false 即可
      */
-    'enable_mock' => env('WECHAT_ENABLE_MOCK', true),
+    'enable_mock' => env( 'WECHAT_ENABLE_MOCK', false ),
     'mock_user' => [
         "openid" => "odh7zsgI75iT8FRh0fGlSojc9PWM",
         // 以下字段为 scope 为 snsapi_userinfo 时需要

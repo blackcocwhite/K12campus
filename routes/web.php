@@ -24,4 +24,9 @@ Route::group(['namespace'=>"Temporary","middleware" => "csrf"],function () {
     Route::delete('/temporary/questionnaire/{id}',"OfficialdataController@destroy");
     Route::get('/list', "TestController@index");
 });
-Route::any('/wechat', 'WechatController@serve');
+Route::group( ['namespace' => "Wechat"], function () {
+    Route::any( '/wechat', 'WechatController@serve' );
+    Route::get( '/oauth/cid/{cid}/fid/{fid}/wappid/{wappid}', 'WechatController@oauth' );
+    Route::get( '/oauth_callback', 'WechatController@oauth_callback' );
+} );
+//http://www.8dsun.com/oauth.php?cid=8aadb31e5dc16dd8015dc4a2191d01dc&fid=CHANNELID&wappid=wxde252df044180329

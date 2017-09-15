@@ -1,9 +1,10 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Wechat;
 
 use Log;
 use EasyWeChat;
+use App\Http\Controllers\Controller;
 
 class WechatController extends Controller
 {
@@ -50,7 +51,29 @@ class WechatController extends Controller
         return $wechat->server->serve();
     }
 
-    public function demo(){
+    public function oauth()
+    {
+        $url = "/oauth_callback";
+        config( ['wechat.oauth.callback' => $url] );
 
+        $wechat = app( 'wechat' );
+        $oauth = $wechat->oauth;
+        return $oauth->redirect();
+//// 未登录
+//        if (empty($_SESSION['wechat_user'])) {
+//            $_SESSION['target_url'] = 'user/profile';
+//            return $oauth->redirect();
+//            // 这里不一定是return，如果你的框架action不是返回内容的话你就得使用
+//            // $oauth->redirect()->send();
+//        }
+    }
+
+    public function oauth_callback()
+    {
+        $wechat = app( 'wechat' );
+        $oauth = $wechat->oauth;
+        $user = $oauth->user();
+        echo "<pre>";
+        print_r( $user );
     }
 }

@@ -77,7 +77,7 @@ class UserController extends Controller
         }
     }
 
-    public function  associateRepairer(Request $request,UserRepository $systemUser)
+    public function associateRepairer(Request $request, UserRepository $systemUser)
     {
         $input = $request->all();
 
@@ -121,10 +121,10 @@ class UserController extends Controller
      */
     protected function check_accendant($mobile){
         $status = 0;//标识维修商
-        if (!$auth = DB::table('app_jiaozhuang_repaire')->where('repaire_phone', $mobile)->select('repaire_id','repaire_user_name as displayName','repaire_phone')->get()) {
+        if ( !$auth = DB::table( 'app_jiaozhuang_repaire' )->where( 'repaire_phone', $mobile )->select( 'repaire_id', 'repaire_user_name as displayName', 'repaire_phone' )->first() ) {
             $status = 1;
 
-            if (!$auth = DB::table('app_jiaozhuang_supply')->where('supply_mobile',  $mobile)->select('supply_id as repaire_id','supply_user_name as displayName','supply_mobile as repaire_phone')->get())
+            if ( !$auth = DB::table( 'app_jiaozhuang_supply' )->where( 'supply_mobile', $mobile )->select( 'supply_id as repaire_id', 'supply_user_name as displayName', 'supply_mobile as repaire_phone' )->first() )
                 return false;
         }
         $array = [];
@@ -151,5 +151,14 @@ class UserController extends Controller
             return false;
         }
         return true;
+    }
+
+    public function check_jyj($mobile)
+    {
+        $auth = DB::table( 'console_teacher_user' )->where( 'teacher_phone', $mobile )->select( 'user_id', 'teacher_name as displayName', 'teacher_phone' )->get();
+        if ( !$auth ) {
+            return array('status' => 0, 'errmsg' => '报修人员未登记！');
+        }
+        return array('status' => 1, 'data' => $auth);
     }
 }

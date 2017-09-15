@@ -18,7 +18,7 @@ class UserRepository
      * @param $openid
      * @return array
      */
-    public function checkRegister($uid,$openid,$wappid='wxde252df044180329')
+    public function checkRegister($uid, $openid, $wappid)
     {
         if($user_id = Predis::hget("WechatUserWithUnionId:$uid",'userId')){
             Predis::hset("WechatUserWithUnionId:$uid",$wappid,$openid);
@@ -32,7 +32,7 @@ class UserRepository
     /**
      * 系统注册
      */
-    public function systemRegister($uid,$openid,$mobile,$wappid='wxde252df044180329')
+    public function systemRegister($uid, $openid, $mobile, $wappid)
     {
         if(Predis::exists("app.user:$mobile")){
             $user_id = Predis::hget("app.user:$mobile","userId");
@@ -58,7 +58,7 @@ class UserRepository
             $displayName = isset($userInfo['nickname']) ? $userInfo['nickname'] : '未关注用户';
             $sex = isset($userInfo['sex']) == 1 ? 0 : 1;
 
-            Predis::pipeline(function ($pipe) use($uid,$openid,$mobile,$wappid,$user_id,$sub,$avatar,$displayName,$sex){
+            Predis::pipeline( function ($pipe) use ($uid, $openid, $mobile, $wappid, $user_id, $avatar, $displayName, $sex) {
                $pipe->hmset("WechatUserWithUnionId:$uid",
                    array('userId'=>$user_id,$wappid=>$openid)
                )
@@ -70,7 +70,6 @@ class UserRepository
             return array('status'=>1,'data'=>array('userId'=>$user_id,'_keys'=>$_keys));
         }
     }
-
     /**
      * 获取关注用户的基本信息
      * @param $openid

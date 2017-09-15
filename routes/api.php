@@ -18,6 +18,7 @@ Route::group(['prefix'=>'v1'], function () {
         Route::post('/checkAccendant',"UserController@associateRepairer");
 
         Route::post('/evaluate',"OrderController@evaluate");
+        Route::get( '/checkjyj/{mobile}', "UserController@check_jyj" );
     });
 
     /****教育装备客服系统----维修端****/

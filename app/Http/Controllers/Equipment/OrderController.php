@@ -40,7 +40,7 @@ class OrderController extends Controller
     /**
      * 工单的详情
      * @param $order_id
-     * @return \App\Repositories\Collection
+     * @return mixed
      */
     public function orderInformation($order_id){
         return $this->order->forOrderId($order_id);
